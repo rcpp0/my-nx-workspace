@@ -1,0 +1,421 @@
+---
+description: Règles pour le debugging et la résolution de problèmes Angular 20
+globs: ['**/*.ts']
+---
+
+# Règles de Debugging - Angular 20
+
+## Outils de debug
+
+1. **Angular DevTools** (extension Chrome/Firefox)
+
+   - Onglet Components : voir l'arbre des components et leurs signals
+   - Onglet Profiler : analyser les cycles de change detection
+
+2. **Console navigateur** (F12)
+
+   - Erreurs JavaScript
+   - Messages console.log (temporaires uniquement)
+
+3. **Network tab** (F12)
+
+   - Vérifier les requêtes HTTP
+   - Statuts, headers, body
+
+4. **Sources tab** (F12)
+
+   - Breakpoints dans le code TypeScript
+
+5. **MCP Angular**
+   - `search_documentation("error message")` pour trouver la doc officielle
+
+## Erreurs Angular courantes
+
+### NG0100 - ExpressionChangedAfterItHasBeenCheckedError
+
+**Cause** : Modification de l'état après le cycle de change detection.
+
+```typescript
+// ❌ Problème : modification directe
+ngOnInit() {
+  this.value = 'new';  // Peut causer NG0100
+}
+
+// ✅ Solution 1 : Utiliser un signal
+value = signal('');
+ngOnInit() {
+  this.value.set('new');
+}
+
+// ✅ Solution 2 : markForCheck (si vraiment nécessaire)
+ngOnInit() {
+  this.value = 'new';
+  this.cdr.markForCheck();
+}
+```
+
+**En tests** : Utiliser `await fixture.whenStable()` au lieu de `fixture.detectChanges()`.
+
+### NG0908 - Angular requires Zone.js
+
+**Cause** : Tests sans `provideZonelessChangeDetection()`.
+
+```typescript
+// ✅ Solution
+TestBed.configureTestingModule({
+  providers: [
+    provideZonelessChangeDetection(), // ← Ajouter
+    provideHttpClient(),
+    provideHttpClientTesting(),
+  ],
+});
+```
+
+### NG0914 - Zone.js is still loaded
+
+**Cause** : Zone.js encore dans les polyfills alors qu'on utilise zoneless.
+
+**Solution** : Supprimer `"zone.js"` de `angular.json > polyfills`.
+
+### NG0303 - Can't bind to 'X' since it isn't a known property
+
+**Cause** : Directive ou module non importé.
+
+```typescript
+// ❌ Problème
+<form [formGroup]="form">  // Error: Can't bind to 'formGroup'
+
+// ✅ Solution : importer ReactiveFormsModule
+@Component({
+  imports: [ReactiveFormsModule],  // ← Ajouter
+})
+```
+
+Imports courants manquants :
+
+- `[formGroup]`, `formControlName` → `ReactiveFormsModule`
+- `[(ngModel)]` → `FormsModule`
+- `[routerLink]` → `RouterLink`
+- `[class.xxx]` → Natif, pas d'import
+
+### NG0301 - 'X' is not a known element
+
+**Cause** : Component non importé.
+
+```typescript
+// ❌ Problème
+<app-spinner />  // Error: 'app-spinner' is not a known element
+
+// ✅ Solution
+@Component({
+  imports: [SpinnerComponent],  // ← Ajouter
+})
+```
+
+### NullInjectorError: No provider for X
+
+**Cause** : Service non fourni.
+
+```typescript
+// ✅ Solution 1 : providedIn: 'root' (recommandé)
+@Injectable({ providedIn: 'root' })
+export class MyService {}
+
+// ✅ Solution 2 : provider explicite
+@Component({
+  providers: [MyService]
+})
+```
+
+### TypeError: Cannot read property 'X' of undefined
+
+**Cause** : Accès à une propriété avant initialisation.
+
+```html
+<!-- ❌ Problème -->
+<div>{{ order.customer }}</div>
+<!-- order peut être undefined -->
+
+<!-- ✅ Solution : @if guard -->
+@if (order()) {
+<div>{{ order().customer }}</div>
+}
+```
+
+## Erreurs zoneless spécifiques
+
+### L'UI ne se met pas à jour
+
+**Cause** : Pas de notification de changement sans Zone.js.
+
+```typescript
+// ❌ Problème : variable classique
+data: Data[] = [];
+
+loadData() {
+  this.http.get<Data[]>(url).subscribe(d => {
+    this.data = d;  // L'UI ne se met pas à jour
+  });
+}
+
+// ✅ Solution : Signal
+data = signal<Data[]>([]);
+
+loadData() {
+  this.http.get<Data[]>(url).subscribe(d => {
+    this.data.set(d);  // L'UI se met à jour
+  });
+}
+```
+
+### ErrorHandler ne capture plus les erreurs async
+
+**Cause** : Zone.js ne patche plus les APIs async.
+
+**Solution** : `provideBrowserGlobalErrorListeners()` est automatique depuis Angular 20.
+
+## Erreurs json-server 0.17.4
+
+### Vérifier que json-server est lancé
+
+```bash
+# Vérifier le process
+npx json-server --watch db.json --port 3000
+
+# Ou avec le script
+npm run server
+```
+
+### 404 Not Found
+
+**Causes possibles** :
+
+1. URL incorrecte (vérifier `/orders` pas `/order`)
+2. Ressource non présente dans db.json
+3. Port incorrect (doit être 3000)
+
+```typescript
+// ✅ Vérifier l'URL
+private readonly apiUrl = 'http://localhost:3000/orders';  // Pas 'order'
+```
+
+### CORS Error
+
+json-server 0.17.4 autorise CORS par défaut. Si erreur :
+
+```bash
+# Lancer avec CORS explicite
+npx json-server --watch db.json --port 3000 --host 0.0.0.0
+```
+
+### 401 Unauthorized (json-server-auth)
+
+**Causes** :
+
+1. json-server-auth pas lancé (utiliser `npm run server:auth`)
+2. Token manquant ou invalide
+3. Route protégée sans authentification
+
+```typescript
+// Vérifier le header Authorization
+req = req.clone({
+  setHeaders: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+```
+
+### Cannot find module 'json-server'
+
+```bash
+npm install json-server@0.17.4 --save-dev
+npm install json-server-auth@2.1.0 --save-dev
+```
+
+### db.json format incorrect
+
+```json
+{
+  "users": [],
+  "orders": [
+    {
+      "id": 1,
+      "customer": "Test",
+      "nbDays": 5,
+      "tjm": 500,
+      "tauxTva": 20,
+      "totalHt": 2500,
+      "totalTtc": 3000
+    }
+  ]
+}
+```
+
+### Routes json-server-auth
+
+| Méthode | Endpoint    | Body                               | Réponse                           |
+| ------- | ----------- | ---------------------------------- | --------------------------------- |
+| POST    | `/register` | `{"email":"...","password":"..."}` | `{"accessToken":"...","user":{}}` |
+| POST    | `/login`    | `{"email":"...","password":"..."}` | `{"accessToken":"...","user":{}}` |
+| GET     | `/users`    | -                                  | Protégé, nécessite token          |
+
+## Debugging des Signals
+
+### Console temporaire avec effect()
+
+```typescript
+// Debug temporaire
+constructor() {
+  effect(() => {
+    console.log('orders:', this.orders());
+    console.log('loading:', this.loading());
+    console.log('error:', this.error());
+  });
+}
+
+// ⚠️ SUPPRIMER après debug
+```
+
+### Dans Angular DevTools
+
+1. Ouvrir DevTools → Components
+2. Sélectionner le component
+3. Voir les signals dans le panneau State
+
+### Dans la console Chrome
+
+```javascript
+// Sélectionner un élément dans Elements, puis :
+ng.getComponent($0); // Récupère le component
+
+// Voir les signals
+ng.getComponent($0).orders();
+```
+
+## Debugging Change Detection
+
+### Vérifier OnPush
+
+```typescript
+// Tous les components doivent avoir :
+@Component({
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+```
+
+### Forcer la détection (debug uniquement)
+
+```typescript
+private readonly cdr = inject(ChangeDetectorRef);
+
+// Forcer la détection
+this.cdr.markForCheck();
+
+// ⚠️ À utiliser pour debug, pas en production
+```
+
+## Debugging Réseau
+
+### Chrome Network Tab
+
+1. Ouvrir DevTools (F12)
+2. Onglet Network
+3. Filtrer par XHR/Fetch
+4. Vérifier :
+   - URL correcte ?
+   - Méthode correcte (GET/POST/PUT/DELETE) ?
+   - Headers présents (Authorization) ?
+   - Body correct pour POST/PUT ?
+   - Status code de la réponse ?
+
+### Intercepter les requêtes
+
+```typescript
+// Debug interceptor temporaire
+export const debugInterceptor: HttpInterceptorFn = (req, next) => {
+  console.log('Request:', req.method, req.url, req.body);
+
+  return next(req).pipe(
+    tap({
+      next: (event) => {
+        if (event instanceof HttpResponse) {
+          console.log('Response:', event.status, event.body);
+        }
+      },
+      error: (err) => console.error('Error:', err),
+    })
+  );
+};
+
+// ⚠️ SUPPRIMER après debug
+```
+
+## Utiliser MCP Angular pour le debug
+
+```
+"Cherche l'erreur NG0100 dans la documentation Angular"
+
+"Comment déboguer les signals qui ne se mettent pas à jour"
+
+"Best practices change detection zoneless"
+```
+
+## Checklist debug rapide
+
+1. [ ] Console navigateur : erreurs rouges ?
+2. [ ] Network tab : requêtes HTTP ok ? Status 200 ?
+3. [ ] json-server lancé ? (`npm run server`)
+4. [ ] URL API correcte ? (`http://localhost:3000/...`)
+5. [ ] Imports corrects dans le component ?
+6. [ ] OnPush activé ?
+7. [ ] Signals utilisés (pas variables classiques) ?
+8. [ ] Angular DevTools : état des signals ?
+9. [ ] MCP Angular : `search_documentation("erreur")`
+
+## Scripts utiles
+
+```json
+{
+  "scripts": {
+    "ng": "ng",
+    "start": "nx serve mini-crm",
+    "build": "nx build mini-crm",
+    "watch": "nx build mini-crm --watch --configuration development",
+    "test": "nx test mini-crm",
+    "test:watch": "nx test mini-crm --watch",
+    "test:coverage": "nx test mini-crm --coverage",
+    "lint": "nx lint mini-crm",
+    "server": "json-server --watch db.json --port 3000",
+    "server:auth": "json-server-auth db.json --port 3000",
+    "dev": "concurrently \"npm start\" \"npm run server\""
+  }
+}
+```
+
+## Commandes terminal
+
+```bash
+# Relancer le dev server
+npm start
+# ou
+nx serve mini-crm
+
+# Vérifier la compilation
+npm run build
+# ou
+nx build mini-crm
+
+# Lancer json-server
+npm run server
+
+# Lancer app + API en parallèle
+npm run dev
+
+# Lancer les tests
+npm test
+# ou
+nx test mini-crm
+
+# Logs détaillés
+nx serve mini-crm --verbose
+```

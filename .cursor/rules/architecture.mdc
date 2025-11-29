@@ -1,0 +1,555 @@
+---
+description: Architecture globale et patterns du projet Mini CRM
+globs: ['**/*.ts', '**/*.html', '**/*.scss']
+---
+
+# Architecture du Projet - Principes et Patterns
+
+Ce document explique les **principes architecturaux** et les **patterns** à suivre pour structurer une application Angular 20 moderne. Ces règles guident la génération du code mais ne décrivent pas le code existant.
+
+## 1. Organisation Nx Monorepo
+
+### Principe
+
+Ce projet utilise **Nx** pour organiser le code en **monorepo** avec des bibliothèques séparées. Organiser le code par **domaine métier** (features) et par **responsabilité** (UI, data-access) dans des libs Nx.
+
+### Structure Nx (libs et apps)
+
+#### `apps/` - Applications Angular
+
+- **Rôle** : Points d'entrée de l'application (orchestration uniquement).
+- **Contenu typique** :
+  - `app.routes.ts` : Routes principales avec lazy loading vers les libs
+  - `app.ts` : Composant racine minimal
+  - Configuration (app.config.ts)
+- **Règle** : L'app ne contient QUE l'orchestration, pas de logique métier.
+
+#### `libs/shared-ui/` - Composants UI réutilisables
+
+- **Rôle** : Composants UI purs, pipes, directives réutilisables.
+- **Contenu typique** :
+  - Composants UI génériques (button, input, modal, spinner, etc.)
+  - Pipes utilitaires (format-phone, etc.)
+  - Directives réutilisables
+- **Règle stricte** : AUCUNE dépendance vers `data-access` ou `feature-*` (UI pure uniquement).
+- **Import** : `@mini-crm/shared-ui`
+
+#### `libs/data-access/` - Accès aux données
+
+- **Rôle** : Communication avec les APIs backend, gestion des données brutes.
+- **Contenu typique** :
+  - Services HTTP (appels API)
+  - Modèles/interfaces de données
+  - Intercepteurs HTTP
+  - Transformateurs de données (DTO → modèles)
+- **Règle stricte** : AUCUNE dépendance vers `shared-ui` ou `feature-*`.
+- **Import** : `@mini-crm/data-access`
+
+#### `libs/feature-*/` - Features métier
+
+- **Rôle** : Features métier isolées et lazy-loadées.
+- **Structure interne d'une feature** :
+  - `components/` : Composants Smart (logique) et Dumb (présentation)
+  - `*.routes.ts` : Routes de la feature (lazy loading)
+  - Services métier locaux (si nécessaire)
+- **Règle** : Chaque feature est autonome et peut être développée indépendamment.
+- **Dépendances autorisées** : `data-access`, `shared-ui`
+- **Import** : `@mini-crm/feature-contacts`, `@mini-crm/feature-orders`, etc.
+
+### Tags Nx et Contraintes de Dépendances
+
+Pour **garantir le respect des frontières de dépendances**, Nx utilise un système de **tags** et de **contraintes ESLint**.
+
+#### Tags par type de lib
+
+Chaque projet (app ou lib) doit avoir des tags dans son `project.json` :
+
+| Type de projet | Tag obligatoire | Exemple |
+| -------------- | --------------- | ------- |
+| Application    | `type:app`      | `["type:app", "scope:mini-crm"]` |
+| Feature        | `type:feature`  | `["type:feature", "scope:orders"]` |
+| Data Access    | `type:data-access` | `["type:data-access"]` |
+| Shared UI      | `type:ui`       | `["type:ui"]` |
+
+#### Exemple de configuration
+
+```json
+// apps/mini-crm/project.json
+{
+  "name": "mini-crm",
+  "tags": ["type:app", "scope:mini-crm"]
+}
+
+// libs/shared-ui/project.json
+{
+  "name": "shared-ui",
+  "tags": ["type:ui"]
+}
+
+// libs/data-access/project.json
+{
+  "name": "data-access",
+  "tags": ["type:data-access"]
+}
+
+// libs/feature-orders/project.json
+{
+  "name": "feature-orders",
+  "tags": ["type:feature", "scope:orders"]
+}
+```
+
+#### Contraintes de dépendances ESLint
+
+Configuration dans `eslint.config.mjs` (racine du projet) :
+
+```javascript
+depConstraints: [
+  // L'app peut importer features, data-access et ui
+  {
+    sourceTag: 'type:app',
+    onlyDependOnLibsWithTags: ['type:feature', 'type:data-access', 'type:ui'],
+  },
+  // Les features : data-access et ui (PAS d'autres features !)
+  {
+    sourceTag: 'type:feature',
+    onlyDependOnLibsWithTags: ['type:data-access', 'type:ui'],
+  },
+  // ui peut importer data-access
+  {
+    sourceTag: 'type:ui',
+    onlyDependOnLibsWithTags: ['type:data-access'],
+  },
+  // data-access ne peut rien importer
+  {
+    sourceTag: 'type:data-access',
+    onlyDependOnLibsWithTags: [],
+  },
+]
+```
+
+#### Règles de dépendances visuelles
+
+```
+┌─────────┐
+│   app   │  Peut importer : feature, data-access, ui
+└────┬────┘
+     │
+     ├──→ ┌─────────┐
+     │    │ feature │  Peut importer : data-access, ui
+     │    └────┬────┘
+     │         │
+     ├─────────┼──→ ┌──────────────┐
+     │         │    │     ui       │  Peut importer : data-access
+     │         │    └──────┬───────┘
+     │         │           │
+     └─────────┴───────────┼──→ ┌─────────────┐
+                           │    │ data-access │  Ne peut rien importer
+                           └──→ └─────────────┘
+```
+
+#### Pourquoi ces contraintes ?
+
+1. **`type:app` → feature, data-access, ui** : L'app orchestre mais ne contient pas de logique
+2. **`type:feature` → data-access, ui** : Les features utilisent les données et l'UI, mais **PAS d'autres features** (isolation)
+3. **`type:ui` → data-access** : L'UI peut avoir besoin de types/interfaces de données
+4. **`type:data-access` → rien** : Les données sont au niveau le plus bas, aucune dépendance
+
+#### Vérification automatique
+
+Nx vérifie automatiquement les contraintes lors du lint :
+
+```bash
+npx nx lint <project-name>
+```
+
+**Si une violation est détectée** :
+```
+error  A project tagged with "type:feature" can only depend on libs tagged with "type:data-access", "type:ui"
+```
+
+### Pourquoi cette organisation Nx ?
+
+1. **Isolation** : Chaque lib peut être développée/testée indépendamment
+2. **Cache Nx** : Builds incrémentaux (seule la lib modifiée est rebuildée)
+3. **Lazy loading** : Réduction du bundle initial
+4. **Maintenabilité** : Code organisé par responsabilité et domaine métier
+5. **Scalabilité** : Facile d'ajouter de nouvelles libs/apps
+6. **Réutilisabilité** : Libs partagées entre plusieurs apps Angular
+
+### Barrel Exports et API Publique
+
+Chaque lib Nx a un fichier `src/index.ts` qui définit son **API publique** (ce qui est accessible depuis l'extérieur).
+
+#### Structure d'une lib
+
+```
+libs/shared-ui/
+├── src/
+│   ├── index.ts          ← API publique (barrel export)
+│   └── lib/
+│       ├── spinner/
+│       │   ├── spinner.component.ts
+│       │   └── spinner.component.scss
+│       └── confirm-modal/
+│           ├── confirm-modal.component.ts
+│           ├── confirm-modal.component.html
+│           └── confirm-modal.component.scss
+```
+
+#### Fichier index.ts (barrel export)
+
+```typescript
+// libs/shared-ui/src/index.ts
+// Exporter UNIQUEMENT ce qui doit être accessible depuis l'extérieur
+
+export * from './lib/spinner/spinner.component';
+export * from './lib/confirm-modal/confirm-modal.component';
+
+// Ne PAS exporter les utilitaires internes, types privés, etc.
+```
+
+#### Règles d'export
+
+- ✅ **Exporter** : Composants publics, services publics, interfaces publiques
+- ❌ **Ne pas exporter** : Composants internes, utilitaires privés, types internes
+- ✅ **Toujours** : Mettre à jour `index.ts` quand on ajoute un nouveau composant public
+
+#### Comment importer depuis une autre lib
+
+```typescript
+// Dans feature-orders
+import { SpinnerComponent } from '@mini-crm/shared-ui';  // ✅ Via barrel export
+
+// ❌ JAMAIS comme ça (contourne le barrel export)
+import { SpinnerComponent } from '@mini-crm/shared-ui/src/lib/spinner/spinner.component';
+```
+
+#### Avantages du barrel export
+
+1. **Encapsulation** : Contrôle de ce qui est public vs privé
+2. **Refactoring** : Possibilité de réorganiser l'interne sans casser les imports externes
+3. **Performance** : Tree-shaking plus efficace
+4. **Clarté** : API claire et documentée
+
+#### Workflow complet
+
+1. Créer un composant dans une lib : `nx g component spinner --project=shared-ui`
+2. Exporter dans `libs/shared-ui/src/index.ts` : `export * from './lib/spinner/spinner.component';`
+3. Utiliser dans une autre lib : `import { SpinnerComponent } from '@mini-crm/shared-ui';`
+
+## 2. Flux de Données (Data Flow)
+
+### Principe : Flux unidirectionnel
+
+Le flux de données suit un pattern **unidirectionnel** et réactif grâce aux Signals Angular.
+
+### Les trois niveaux
+
+#### 1. Service (State Manager)
+
+- **Responsabilité** : Détient l'état de l'application (Signals `writable`)
+- **Expose** : Des Signals en lecture seule (`computed` ou `asReadonly`)
+- **Gère** : Les appels HTTP et met à jour les Signals
+- **Pattern** : Encapsulation avec state privé et selectors publics
+
+#### 2. Smart Component (Page/Container)
+
+- **Responsabilité** : Orchestration et logique métier
+- **Injecte** : Le Service
+- **Lit** : Les Signals du Service
+- **Appelle** : Les méthodes du Service (actions)
+- **Passe** : Les données aux Dumb Components via `input()`
+
+#### 3. Dumb Component (UI/Presentation)
+
+- **Responsabilité** : Affichage uniquement
+- **Reçoit** : Les données via `input()`
+- **Émet** : Les événements utilisateur via `output()`
+- **Règle** : Aucune logique métier complexe, uniquement présentation
+
+### Avantages
+
+- **Testabilité** : Dumb components faciles à tester (pas de dépendances)
+- **Réutilisabilité** : Dumb components réutilisables dans différents contextes
+- **Clarté** : Séparation claire entre logique et présentation
+
+## 3. State Management avec Signals
+
+### Principe : Pas de state management externe
+
+Pour ce projet, **pas de NgRx ou Akita**. Le state management est géré localement par les services avec des Signals Angular.
+
+### Pourquoi Signals plutôt que RxJS BehaviorSubject ?
+
+1. **Simplicité** : API plus simple et intuitive
+2. **Performance** : Optimisations automatiques par Angular
+3. **Intégration** : Intégré nativement dans Angular 20
+4. **Réactivité** : Mise à jour automatique de l'UI
+
+### Pattern recommandé : Encapsulation
+
+```typescript
+// Pattern à suivre (exemple conceptuel)
+@Injectable({ providedIn: 'root' })
+export class FeatureService {
+  // 1. State privé (writable signals)
+  private readonly _items = signal<Item[]>([]);
+  private readonly _loading = signal(false);
+
+  // 2. Selectors publics (readonly)
+  readonly items = this._items.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly count = computed(() => this._items().length);
+
+  // 3. Actions (méthodes publiques)
+  loadItems() {
+    this._loading.set(true);
+    // ... logique HTTP
+    this._items.set(data);
+    this._loading.set(false);
+  }
+}
+```
+
+### Règles
+
+- **State privé** : Signals writable en `private readonly`
+- **Selectors publics** : Exposer via `asReadonly()` ou `computed()`
+- **Pas de mutate** : Utiliser `set()` ou `update()`, jamais `mutate()`
+
+## 4. Routing Strategy
+
+### Principe : Lazy loading partout
+
+Toutes les features sont **lazy-loadées** pour optimiser le bundle initial.
+
+### Structure des routes
+
+- **Routes principales** : Dans `app.routes.ts` (redirections et lazy loading)
+- **Routes de feature** : Dans `feature.routes.ts` (routes internes à la feature)
+- **Guards** : Fonctionnels uniquement (pas de classes)
+
+### Pattern de lazy loading avec Nx
+
+```typescript
+// Pattern à suivre (dans apps/mini-crm/src/app/app.routes.ts)
+{
+  path: 'contacts',
+  loadChildren: () => import('@mini-crm/feature-contacts').then(m => m.routes)
+}
+```
+
+**Important** : Utiliser les alias Nx (`@mini-crm/feature-*`) et non les chemins relatifs.
+
+### Avantages
+
+- **Performance** : Bundle initial réduit
+- **Isolation** : Chaque feature chargée indépendamment
+- **Maintenabilité** : Routes organisées par feature
+
+## 5. Layout System avec Content Projection
+
+### Principe : Layout réutilisable avec projections
+
+Le layout utilise le pattern de **content projection** Angular pour une flexibilité maximale.
+
+### Architecture du layout
+
+- **LayoutComponent** : Conteneur principal avec structure (header, sidebar, main)
+- **HeaderComponent** : Header de l'application
+- **SidebarComponent** : Navigation latérale
+- **RouterOutlet** : Placé dans le LayoutComponent (zone main)
+
+### Pattern de projection
+
+```html
+<!-- Pattern à suivre -->
+<app-layout>
+  <app-header layout-header></app-header>
+  <app-sidebar layout-sidebar></app-sidebar>
+</app-layout>
+```
+
+Le LayoutComponent projette :
+
+- `[layout-header]` → dans la zone header
+- `[layout-sidebar]` → dans la zone sidebar
+- Contenu par défaut → router-outlet dans la zone main
+
+### Pourquoi cette approche ?
+
+- **Flexibilité** : Le layout peut être réutilisé avec différents headers/sidebars
+- **Découplage** : Header et Sidebar sont indépendants
+- **Maintenabilité** : Structure claire et modulaire
+
+## 6. Styling Architecture
+
+### Principe : Component-First avec Bootstrap 5
+
+Chaque composant gère ses propres styles de manière isolée.
+
+### Approche
+
+1. **Bootstrap 5** : Classes utilitaires et composants en priorité
+2. **Variables CSS Custom** : Pour le theming et la personnalisation
+3. **Isolation** : Styles dans fichier SCSS du composant via `:host`
+4. **Pas de styles globaux** : Sauf imports Bootstrap dans `styles.scss`
+
+### Pattern de variables CSS
+
+```scss
+// Pattern à suivre dans chaque component SCSS
+:host {
+  // Variables CSS custom (permettent le theming)
+  --component-bg: #{$white};
+  --component-text: #{$dark};
+  --component-padding: 1rem;
+}
+
+.component {
+  background: var(--component-bg);
+  color: var(--component-text);
+  padding: var(--component-padding);
+}
+```
+
+### Avantages
+
+- **Theming** : Variables CSS modifiables à runtime
+- **Isolation** : Pas de conflits de styles entre composants
+- **Maintenabilité** : Styles co-localisés avec le composant
+
+## 7. Communication entre Composants
+
+### Pattern 1 : Parent → Child (Input)
+
+```typescript
+// Parent
+<app-child [data]="parentData()" />
+
+// Child
+data = input<Data>();
+```
+
+### Pattern 2 : Child → Parent (Output)
+
+```typescript
+// Child
+save = output<Data>();
+
+// Parent
+<app-child (save)="onSave($event)" />
+```
+
+### Pattern 3 : Sibling → Sibling (Service)
+
+Via un service partagé avec signals :
+
+```typescript
+// Service
+items = signal<Item[]>([]);
+
+// Component A
+this.service.items.set([...]);
+
+// Component B
+const items = this.service.items();
+```
+
+## 8. Gestion des Erreurs
+
+### Principe : Centralisée dans les services
+
+Chaque service expose un signal `error` pour la gestion d'erreurs.
+
+### Pattern
+
+```typescript
+// Pattern à suivre
+error = signal<string | null>(null);
+
+loadData(): void {
+  this.error.set(null); // Reset avant nouvelle requête
+  // ...
+  this.http.get<Data[]>(url).subscribe({
+    error: (err) => {
+      this.error.set(err.message || 'Erreur lors du chargement');
+    }
+  });
+}
+```
+
+### Affichage dans les composants
+
+```html
+@if (service.error()) {
+<div class="alert alert-danger">{{ service.error() }}</div>
+}
+```
+
+## 9. Performance
+
+### OnPush Change Detection
+
+**Obligatoire** : Tous les components doivent avoir `ChangeDetectionStrategy.OnPush`.
+
+### Pourquoi ?
+
+- **Performance** : Réduction drastique des cycles de change detection
+- **Prévisibilité** : Comportement prévisible et optimisé
+- **Best practice** : Standard Angular 20 avec signals
+
+### Lazy Loading
+
+Toutes les features sont lazy-loadées pour réduire le bundle initial.
+
+### Track dans @for
+
+**Obligatoire** : Utiliser `track` dans tous les `@for` pour optimiser le rendu.
+
+```html
+@for (item of items(); track item.id) {
+<!-- ... -->
+}
+```
+
+## 10. Tests (Vitest)
+
+### Stratégie de tests
+
+- **Unitaires** : Services et logique métier
+- **Intégration** : Components (Smart & Dumb) avec DOM testing
+- **Zoneless** : Utilisation de `provideZonelessChangeDetection` et `fixture.whenStable()`
+
+### Pattern de test
+
+Voir le fichier `.cursor/rules/testing.mdc` pour les détails complets.
+
+## Checklist Architecture Nx
+
+Avant de créer un nouveau component/service, vérifier :
+
+1. [ ] Est-ce dans la bonne lib Nx (`shared-ui`, `data-access`, `feature-*`) ?
+2. [ ] **Les tags Nx sont-ils configurés dans `project.json` ?** (type:app, type:feature, type:ui, type:data-access)
+3. [ ] Le component est-il standalone ?
+4. [ ] OnPush activé ?
+5. [ ] Fichier SCSS séparé ?
+6. [ ] Variables CSS custom définies ?
+7. [ ] Imports avec alias Nx (`@mini-crm/...`) ?
+8. [ ] **Le composant/service est-il exporté dans le barrel export (`src/index.ts`) ?**
+9. [ ] Routes lazy loaded si feature (avec alias Nx) ?
+10. [ ] Services avec signals pour l'état ?
+11. [ ] Gestion d'erreurs implémentée ?
+12. [ ] Track dans @for si liste ?
+13. [ ] Guard fonctionnel si protection de route ?
+14. [ ] Service avec providedIn: 'root' si singleton ?
+15. [ ] Respect des frontières de dépendances (vérifier avec les tags) ?
+
+## Principes Clés à Retenir
+
+1. **Isolation** : Features indépendantes, dépendances unidirectionnelles
+2. **Réactivité** : Signals pour l'état, computed pour les dérivés
+3. **Performance** : OnPush, lazy loading, track dans @for
+4. **Maintenabilité** : Code organisé par domaine, composants petits et focalisés
+5. **Testabilité** : Smart/Dumb separation, services testables

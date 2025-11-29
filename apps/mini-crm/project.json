@@ -1,26 +1,26 @@
 {
-  "name": "angular-demo",
+  "name": "mini-crm",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/angular-demo/src",
-  "tags": [],
+  "sourceRoot": "apps/mini-crm/src",
+  "tags": ["type:app", "scope:mini-crm"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/angular-demo",
-        "browser": "apps/angular-demo/src/main.ts",
+        "outputPath": "dist/apps/mini-crm",
+        "browser": "apps/mini-crm/src/main.ts",
         "polyfills": ["zone.js"],
-        "tsConfig": "apps/angular-demo/tsconfig.app.json",
+        "tsConfig": "apps/mini-crm/tsconfig.app.json",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/angular-demo/public"
+            "input": "apps/mini-crm/public"
           }
         ],
-        "styles": ["apps/angular-demo/src/styles.css"]
+        "styles": ["apps/mini-crm/src/styles.scss"]
       },
       "configurations": {
         "production": {
@@ -51,10 +51,10 @@
       "executor": "@angular/build:dev-server",
       "configurations": {
         "production": {
-          "buildTarget": "angular-demo:build:production"
+          "buildTarget": "mini-crm:build:production"
         },
         "development": {
-          "buildTarget": "angular-demo:build:development"
+          "buildTarget": "mini-crm:build:development"
         }
       },
       "defaultConfiguration": "development"
@@ -62,7 +62,7 @@
     "extract-i18n": {
       "executor": "@angular/build:extract-i18n",
       "options": {
-        "buildTarget": "angular-demo:build"
+        "buildTarget": "mini-crm:build"
       }
     },
     "lint": {
@@ -72,15 +72,15 @@
       "executor": "@nx/vite:test",
       "outputs": ["{options.reportsDirectory}"],
       "options": {
-        "reportsDirectory": "../../coverage/apps/angular-demo"
+        "reportsDirectory": "../../coverage/apps/mini-crm"
       }
     },
     "serve-static": {
       "continuous": true,
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "angular-demo:build",
-        "staticFilePath": "dist/apps/angular-demo/browser",
+        "buildTarget": "mini-crm:build",
+        "staticFilePath": "dist/apps/mini-crm/browser",
         "spa": true
       }
     }

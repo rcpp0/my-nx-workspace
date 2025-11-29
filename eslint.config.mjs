@@ -20,9 +20,29 @@ export default [
           enforceBuildableLibDependency: true,
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
+            // L'app peut importer features, data-access et ui
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: [
+                'type:feature',
+                'type:data-access',
+                'type:ui',
+              ],
+            },
+            // Les features : data-access et ui (PAS d'autres features !)
+            {
+              sourceTag: 'type:feature',
+              onlyDependOnLibsWithTags: ['type:data-access', 'type:ui'],
+            },
+            // ui peut importer data-access
+            {
+              sourceTag: 'type:ui',
+              onlyDependOnLibsWithTags: ['type:data-access'],
+            },
+            // data-access ne peut rien importer
+            {
+              sourceTag: 'type:data-access',
+              onlyDependOnLibsWithTags: [],
             },
           ],
         },

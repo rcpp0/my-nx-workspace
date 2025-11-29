@@ -1,0 +1,510 @@
+# Gestion des Environnements (Dev/Prod) dans Nx
+
+Ce fichier explique comment gérer la configuration multi-environnement (dev, prod) dans une architecture Nx Angular 20, en respectant les contraintes de dépendances.
+
+## ❌ Problème : Import direct interdit
+
+**Dans une architecture Nx, les libs NE PEUVENT PAS importer depuis l'application.**
+
+### Mauvaise pratique (violation ESLint)
+
+```typescript
+// ❌ INTERDIT dans libs/data-access/auth.service.ts
+import { environment } from '../../../apps/mini-crm/src/environments/environment';
+```
+
+**Erreur ESLint** : A project tagged with "type:data-access" can only depend on libs tagged with []
+
+### Pourquoi cette interdiction ?
+
+1. **Couplage fort** : La lib devient dépendante d'une app spécifique
+2. **Réutilisabilité** : La lib ne peut plus être utilisée dans une autre app
+3. **Testabilité** : Difficile de mocker la configuration dans les tests
+4. **Architecture** : Viole le principe de dépendance inversée
+
+---
+
+## ✅ Solution : InjectionToken + Provider dans l'app
+
+### Architecture propre Nx
+
+```
+apps/mini-crm/
+  └── src/
+      ├── environments/
+      │   ├── environment.ts       ← Configuration dev
+      │   └── environment.prod.ts  ← Configuration prod
+      └── app/
+          └── app.config.ts        ← Fournit API_CONFIG
+
+libs/data-access/
+  └── src/
+      ├── lib/
+      │   ├── config/
+      │   │   └── api.config.ts    ← Définit API_CONFIG token
+      │   └── services/
+      │       └── auth.service.ts  ← Injecte API_CONFIG
+      └── index.ts                 ← Exporte API_CONFIG
+```
+
+### Flux d'injection
+
+```
+1. App définit environment.ts (dev) et environment.prod.ts (prod)
+2. App fournit API_CONFIG dans app.config.ts avec la valeur de environment
+3. Lib définit l'interface ApiConfig et le token API_CONFIG
+4. Lib exporte API_CONFIG dans index.ts
+5. Services injectent API_CONFIG avec inject()
+```
+
+---
+
+## 📦 Étape 1 : Créer l'InjectionToken dans data-access
+
+**Fichier** : `libs/data-access/src/lib/config/api.config.ts`
+
+```typescript
+import { InjectionToken } from '@angular/core';
+
+export interface ApiConfig {
+  apiUrl: string;
+}
+
+export const API_CONFIG = new InjectionToken<ApiConfig>('API_CONFIG');
+```
+
+**Pourquoi un InjectionToken ?**
+- ✅ Type-safe (TypeScript valide l'interface)
+- ✅ Testable (facile de mocker dans les tests)
+- ✅ Découplé (la lib ne connaît pas l'app)
+- ✅ Flexible (l'app peut fournir différentes valeurs)
+
+---
+
+## 📤 Étape 2 : Exporter dans le barrel export
+
+**Fichier** : `libs/data-access/src/index.ts`
+
+```typescript
+// Export du token et de l'interface
+export * from './lib/config/api.config';
+
+// Export des services
+export * from './lib/services/auth.service';
+export * from './lib/services/orders.service';
+```
+
+**Important** : Le token DOIT être exporté pour être utilisable dans l'app.
+
+---
+
+## 📁 Étape 3 : Créer les fichiers environment dans l'app
+
+**Fichier** : `apps/mini-crm/src/environments/environment.ts` (dev)
+
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000',
+};
+```
+
+**Fichier** : `apps/mini-crm/src/environments/environment.prod.ts` (prod)
+
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: 'https://api.production.com',  // URL de production
+};
+```
+
+**Note** : Ces fichiers sont dans l'app, pas dans les libs.
+
+---
+
+## ⚙️ Étape 4 : Configurer le provider dans app.config.ts
+
+**Fichier** : `apps/mini-crm/src/app/app.config.ts`
+
+```typescript
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideZonelessChangeDetection } from '@angular/core';
+import { API_CONFIG } from '@mini-crm/data-access';  // ✅ Import depuis la lib
+import { environment } from '../environments/environment';  // ✅ Import depuis l'app
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideZonelessChangeDetection(),
+    provideRouter(routes),
+    provideHttpClient(),
+    // ✅ Fournir la configuration via le token
+    { provide: API_CONFIG, useValue: { apiUrl: environment.apiUrl } },
+  ],
+};
+```
+
+**Explication** :
+- L'app importe `environment` (autorisé car dans l'app)
+- L'app importe `API_CONFIG` depuis la lib (autorisé : app → lib)
+- L'app fournit la valeur du token à toute l'application
+
+---
+
+## 🔧 Étape 5 : Utiliser dans les services
+
+**Fichier** : `libs/data-access/src/lib/services/auth.service.ts`
+
+```typescript
+import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { API_CONFIG } from '../config/api.config';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly http = inject(HttpClient);
+  private readonly config = inject(API_CONFIG);
+  private readonly apiUrl = this.config.apiUrl;
+
+  login(email: string, password: string) {
+    return this.http.post(`${this.apiUrl}/login`, { email, password });
+  }
+
+  register(email: string, password: string) {
+    return this.http.post(`${this.apiUrl}/register`, { email, password });
+  }
+}
+```
+
+**Fichier** : `libs/data-access/src/lib/services/orders.service.ts`
+
+```typescript
+import { inject, Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { API_CONFIG } from '../config/api.config';
+
+@Injectable({ providedIn: 'root' })
+export class OrdersService {
+  private readonly http = inject(HttpClient);
+  private readonly config = inject(API_CONFIG);
+  private readonly apiUrl = this.config.apiUrl;
+
+  getOrders() {
+    return this.http.get(`${this.apiUrl}/orders`);
+  }
+
+  getOrder(id: number) {
+    return this.http.get(`${this.apiUrl}/orders/${id}`);
+  }
+
+  createOrder(order: any) {
+    return this.http.post(`${this.apiUrl}/orders`, order);
+  }
+
+  updateOrder(id: number, order: any) {
+    return this.http.put(`${this.apiUrl}/orders/${id}`, order);
+  }
+
+  deleteOrder(id: number) {
+    return this.http.delete(`${this.apiUrl}/orders/${id}`);
+  }
+}
+```
+
+---
+
+## 🏗️ Étape 6 : Configuration fileReplacements (Nx/Angular)
+
+**Fichier** : `apps/mini-crm/project.json`
+
+Dans la configuration de build, ajouter `fileReplacements` pour la production :
+
+```json
+{
+  "name": "mini-crm",
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "configurations": {
+        "production": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/mini-crm/src/environments/environment.ts",
+              "with": "apps/mini-crm/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    }
+  }
+}
+```
+
+**Résultat** :
+- `npm run build` (prod) → Utilise `environment.prod.ts`
+- `npm start` (dev) → Utilise `environment.ts`
+
+---
+
+## ✅ Avantages de cette approche
+
+| Avantage | Explication |
+|----------|-------------|
+| **Respect des contraintes Nx** | Les libs n'importent pas depuis l'app |
+| **Testabilité** | Possibilité de mocker `API_CONFIG` dans les tests |
+| **Flexibilité** | Facile d'ajouter d'autres configs (timeouts, tokens, etc.) |
+| **Scalabilité** | Fonctionne avec plusieurs libs et services |
+| **Type-safe** | L'interface `ApiConfig` garantit la structure |
+| **Découplage** | Les libs sont réutilisables dans d'autres apps |
+| **Maintenabilité** | Configuration centralisée dans `app.config.ts` |
+
+---
+
+## 🧪 Tests avec API_CONFIG
+
+**Fichier** : `libs/data-access/src/lib/services/auth.service.spec.ts`
+
+```typescript
+import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { AuthService } from './auth.service';
+import { API_CONFIG } from '../config/api.config';
+
+describe('AuthService', () => {
+  let service: AuthService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        // ✅ Mock du token pour les tests
+        { provide: API_CONFIG, useValue: { apiUrl: 'http://test-api.com' } },
+      ],
+    });
+    service = TestBed.inject(AuthService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
+
+  it('should use the configured apiUrl for login', () => {
+    const email = 'test@test.com';
+    const password = 'password123';
+
+    service.login(email, password).subscribe();
+
+    const req = httpMock.expectOne('http://test-api.com/login');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ email, password });
+    req.flush({ accessToken: 'fake-token' });
+  });
+
+  it('should use the configured apiUrl for register', () => {
+    const email = 'new@test.com';
+    const password = 'password123';
+
+    service.register(email, password).subscribe();
+
+    const req = httpMock.expectOne('http://test-api.com/register');
+    expect(req.request.method).toBe('POST');
+    req.flush({ accessToken: 'fake-token' });
+  });
+});
+```
+
+**Avantages dans les tests** :
+- ✅ URL mockée facilement avec `useValue`
+- ✅ Pas besoin de fichiers `environment.ts` dans les tests
+- ✅ Contrôle total de la configuration
+
+---
+
+## 📋 Checklist Configuration Multi-environnement
+
+Avant de créer un service qui utilise l'API, vérifier :
+
+1. [ ] Le token `API_CONFIG` est-il créé dans `libs/data-access/src/lib/config/api.config.ts` ?
+2. [ ] L'interface `ApiConfig` est-elle définie avec les propriétés nécessaires ?
+3. [ ] Le token est-il exporté dans `libs/data-access/src/index.ts` ?
+4. [ ] Les fichiers `environment.ts` et `environment.prod.ts` existent-ils dans `apps/mini-crm/src/environments/` ?
+5. [ ] Le provider `API_CONFIG` est-il configuré dans `apps/mini-crm/src/app/app.config.ts` ?
+6. [ ] Les `fileReplacements` sont-ils configurés dans `apps/mini-crm/project.json` ?
+7. [ ] Les services utilisent-ils `inject(API_CONFIG)` au lieu d'importer `environment` ?
+8. [ ] Les tests mockent-ils `API_CONFIG` avec `useValue` ?
+
+---
+
+## ⚠️ Erreurs Courantes à Éviter
+
+### 1. Importer `environment` dans une lib
+
+```typescript
+// ❌ ERREUR
+import { environment } from '../../../apps/mini-crm/src/environments/environment';
+```
+
+**Résultat** : Erreur ESLint (violation des contraintes de dépendances)
+
+### 2. Oublier d'exporter `API_CONFIG` dans `index.ts`
+
+```typescript
+// ❌ ERREUR : API_CONFIG non exporté
+// libs/data-access/src/index.ts
+export * from './lib/services/auth.service';
+```
+
+**Résultat** : Impossible d'importer `API_CONFIG` dans l'app
+
+### 3. Oublier le provider dans `app.config.ts`
+
+```typescript
+// ❌ ERREUR : Provider manquant
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideHttpClient(),
+    // API_CONFIG n'est pas fourni
+  ],
+};
+```
+
+**Résultat** : Erreur à l'exécution `NullInjectorError: No provider for InjectionToken API_CONFIG`
+
+### 4. Hardcoder l'URL dans les services
+
+```typescript
+// ❌ ERREUR : URL hardcodée
+export class AuthService {
+  private readonly http = inject(HttpClient);
+  
+  login(email: string, password: string) {
+    return this.http.post('http://localhost:3000/login', { email, password });
+  }
+}
+```
+
+**Résultat** : Pas de configuration multi-environnement, URL dev en prod
+
+### 5. Ne pas typer `ApiConfig`
+
+```typescript
+// ❌ ERREUR : Token sans interface
+export const API_CONFIG = new InjectionToken('API_CONFIG');
+```
+
+**Résultat** : Perte de type-safety, pas d'autocomplétion
+
+---
+
+## 🎯 Pattern applicable à d'autres configurations
+
+Ce pattern peut être étendu à d'autres configurations :
+
+### Exemple : Configuration complète de l'application
+
+```typescript
+// libs/data-access/src/lib/config/app.config.ts
+import { InjectionToken } from '@angular/core';
+
+export interface AppConfig {
+  apiUrl: string;
+  apiTimeout: number;
+  retryAttempts: number;
+  enableAnalytics: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export const APP_CONFIG = new InjectionToken<AppConfig>('APP_CONFIG');
+```
+
+**Utilisé pour** :
+- Timeouts HTTP
+- Tentatives de retry
+- Feature flags
+- Analytics
+- Logs
+- Tokens d'authentification
+- Configuration de cache
+- etc.
+
+### Provider dans app.config.ts
+
+```typescript
+import { APP_CONFIG } from '@mini-crm/data-access';
+import { environment } from '../environments/environment';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    {
+      provide: APP_CONFIG,
+      useValue: {
+        apiUrl: environment.apiUrl,
+        apiTimeout: 5000,
+        retryAttempts: 3,
+        enableAnalytics: environment.production,
+        logLevel: environment.production ? 'error' : 'debug',
+      },
+    },
+  ],
+};
+```
+
+---
+
+## 📚 Ressources
+
+- [Angular InjectionToken](https://angular.dev/api/core/InjectionToken)
+- [Nx Module Boundaries](https://nx.dev/features/enforce-module-boundaries)
+- [Angular Dependency Injection](https://angular.dev/guide/di)
+- [Environment Configuration in Angular](https://angular.dev/guide/build#using-environment-specific-variables)
+
+---
+
+## 🎓 Pour la formation
+
+### Démonstration 1 : Montrer l'erreur ESLint
+
+1. Créer volontairement un import direct :
+```typescript
+import { environment } from '../../../apps/mini-crm/src/environments/environment';
+```
+
+2. Lancer le linter :
+```bash
+npm run lint
+```
+
+3. Montrer l'erreur et expliquer pourquoi
+
+### Démonstration 2 : Montrer le graphe de dépendances
+
+```bash
+npm run graph:data
+```
+
+Montrer que `data-access` n'a aucune dépendance sortante (flèches).
+
+### Démonstration 3 : Tester en changeant l'URL
+
+1. Modifier `environment.ts` : `apiUrl: 'http://localhost:4000'`
+2. Relancer l'app : `npm start`
+3. Vérifier dans la console que les requêtes vont vers le port 4000
+
+**Pédagogie** : "Sans changer le code des services, on change l'URL de l'API !"

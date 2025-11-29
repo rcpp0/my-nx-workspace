@@ -1,0 +1,436 @@
+---
+description: Règles pour les tests unitaires avec Vitest (Angular 20)
+globs: ['**/*.spec.ts', '**/*.test.ts']
+---
+
+# Règles de Tests - Vitest (Angular 20)
+
+Angular 20 utilise **Vitest** par défaut (pas Jasmine/Karma).
+
+## Configuration
+
+### project.json (Nx)
+
+Avec Nx, la configuration de test est dans `project.json` (pas `angular.json`) :
+
+```json
+{
+  "test": {
+    "executor": "@angular/build:karma",
+    "options": {
+      "tsConfig": "tsconfig.spec.json"
+    }
+  }
+}
+```
+
+**Note** : Nx génère automatiquement `project.json` pour chaque app/lib.
+
+### Commande
+
+```bash
+ng test
+```
+
+## Syntaxe Vitest (PAS Jasmine)
+
+### Imports
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+```
+
+### Spies et Mocks
+
+```typescript
+// ✅ Vitest
+vi.spyOn(service, 'loadOrders');
+vi.spyOn(service, 'save').mockReturnValue(of({ id: '1' }));
+
+// ❌ PAS Jasmine
+// spyOn(service, 'loadOrders');
+// spyOn(service, 'save').and.returnValue(of({ id: '1' }));
+```
+
+### Création de mocks
+
+```typescript
+// ✅ Vitest
+const mockFn = vi.fn();
+const mockWithReturn = vi.fn().mockReturnValue('value');
+const mockAsync = vi.fn().mockResolvedValue(data);
+
+// ❌ PAS Jasmine
+// const mockFn = jasmine.createSpy();
+```
+
+### Reset des mocks
+
+```typescript
+afterEach(() => {
+  vi.clearAllMocks();
+});
+```
+
+## Correspondance Jasmine → Vitest
+
+| Jasmine                        | Vitest                                                 |
+| ------------------------------ | ------------------------------------------------------ |
+| `toBeTrue()`                   | `toBe(true)`                                           |
+| `toBeFalse()`                  | `toBe(false)`                                          |
+| `toHaveBeenCalledOnceWith(x)`  | `toHaveBeenCalledTimes(1)` + `toHaveBeenCalledWith(x)` |
+| `jasmine.createSpy()`          | `vi.fn()`                                              |
+| `jasmine.objectContaining({})` | `expect.objectContaining({})`                          |
+| `jasmine.any(String)`          | `expect.any(String)`                                   |
+| `spyOn(obj, 'method')`         | `vi.spyOn(obj, 'method')`                              |
+| `.and.returnValue(x)`          | `.mockReturnValue(x)`                                  |
+| `.and.callFake(fn)`            | `.mockImplementation(fn)`                              |
+
+### Focus et Skip
+
+```typescript
+// ✅ Vitest
+it.skip('test ignoré', () => {});
+describe.skip('suite ignorée', () => {});
+it.only('seul test exécuté', () => {});
+describe.only('seule suite exécutée', () => {});
+
+// ❌ PAS Jasmine
+// xit(), xdescribe(), fit(), fdescribe()
+```
+
+## Configuration TestBed (zoneless)
+
+### Pour les components
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+
+describe('OrderListComponent', () => {
+  let component: OrderListComponent;
+  let fixture: ComponentFixture<OrderListComponent>;
+  let httpMock: HttpTestingController;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [OrderListComponent],
+      providers: [
+        provideZonelessChangeDetection(), // ← Obligatoire Angular 20 zoneless
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(OrderListComponent);
+    component = fixture.componentInstance;
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('devrait créer le component', () => {
+    expect(component).toBeTruthy();
+  });
+});
+```
+
+### Pour les services
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideZonelessChangeDetection } from '@angular/core';
+
+describe('OrdersService', () => {
+  let service: OrdersService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+
+    service = TestBed.inject(OrdersService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify(); // ← Obligatoire : vérifie qu'il n'y a pas de requêtes non traitées
+  });
+
+  it('devrait être créé', () => {
+    expect(service).toBeTruthy();
+  });
+});
+```
+
+## Tests des Signals
+
+### Test d'initialisation
+
+```typescript
+it('devrait initialiser les signals', () => {
+  expect(service.orders()).toEqual([]);
+  expect(service.loading()).toBe(false);
+  expect(service.error()).toBeNull();
+});
+```
+
+### Test de mise à jour
+
+```typescript
+it('devrait charger les commandes', () => {
+  const mockOrders = [
+    { id: 1, customer: 'Test', nbDays: 5, tjm: 500, tauxTva: 20, totalHt: 2500, totalTtc: 3000 },
+  ];
+
+  service.loadOrders();
+  expect(service.loading()).toBe(true);
+
+  const req = httpMock.expectOne('http://localhost:3000/orders');
+  expect(req.request.method).toBe('GET');
+  req.flush(mockOrders);
+
+  expect(service.orders()).toEqual(mockOrders);
+  expect(service.loading()).toBe(false);
+});
+```
+
+### Test de computed
+
+```typescript
+it('devrait calculer le nombre de commandes', () => {
+  service.orders.set([
+    { id: 1, customer: 'A', nbDays: 1, tjm: 100, tauxTva: 20, totalHt: 100, totalTtc: 120 },
+    { id: 2, customer: 'B', nbDays: 2, tjm: 200, tauxTva: 20, totalHt: 400, totalTtc: 480 },
+  ]);
+
+  expect(service.ordersCount()).toBe(2);
+});
+```
+
+## Tests des Components (zoneless)
+
+### ⚠️ Règle importante : whenStable() vs detectChanges()
+
+En mode zoneless, utiliser `await fixture.whenStable()` au lieu de `fixture.detectChanges()` pour éviter l'erreur NG0100.
+
+```typescript
+it('devrait afficher le spinner pendant le chargement', async () => {
+  // Arrange
+  const mockService = TestBed.inject(OrdersService);
+  mockService.loading.set(true);
+
+  // Act
+  await fixture.whenStable(); // ← Pas detectChanges()
+
+  // Assert
+  const spinner = fixture.nativeElement.querySelector('.spinner-border');
+  expect(spinner).toBeTruthy();
+});
+
+it('devrait afficher la liste des commandes', async () => {
+  // Arrange
+  const mockService = TestBed.inject(OrdersService);
+  mockService.orders.set([
+    {
+      id: 1,
+      customer: 'Test Corp',
+      nbDays: 5,
+      tjm: 500,
+      tauxTva: 20,
+      totalHt: 2500,
+      totalTtc: 3000,
+    },
+  ]);
+  mockService.loading.set(false);
+
+  // Act
+  await fixture.whenStable();
+
+  // Assert
+  const rows = fixture.nativeElement.querySelectorAll('tbody tr');
+  expect(rows.length).toBe(1);
+  expect(rows[0].textContent).toContain('Test Corp');
+});
+```
+
+### Tests des formulaires
+
+```typescript
+it('devrait invalider le formulaire si email manquant', async () => {
+  await fixture.whenStable();
+
+  component.form.patchValue({ email: '', password: 'password123' });
+
+  expect(component.form.valid).toBe(false);
+  expect(component.form.get('email')?.errors?.['required']).toBe(true);
+});
+
+it('devrait valider le formulaire avec données correctes', async () => {
+  await fixture.whenStable();
+
+  component.form.patchValue({
+    email: 'test@example.com',
+    password: 'password123',
+  });
+
+  expect(component.form.valid).toBe(true);
+});
+
+it('devrait soumettre le formulaire', async () => {
+  const submitSpy = vi.spyOn(component, 'onSubmit');
+  await fixture.whenStable();
+
+  component.form.patchValue({
+    email: 'test@example.com',
+    password: 'password123',
+  });
+
+  const form = fixture.nativeElement.querySelector('form');
+  form.dispatchEvent(new Event('submit'));
+  await fixture.whenStable();
+
+  expect(submitSpy).toHaveBeenCalledTimes(1);
+});
+```
+
+## Tests HTTP CRUD
+
+### GET
+
+```typescript
+it('devrait récupérer toutes les commandes', () => {
+  const mockData = [{ id: 1, customer: 'Test' }];
+
+  service.loadOrders();
+
+  const req = httpMock.expectOne('http://localhost:3000/orders');
+  expect(req.request.method).toBe('GET');
+  req.flush(mockData);
+
+  expect(service.orders()).toEqual(mockData);
+});
+```
+
+### POST
+
+```typescript
+it('devrait créer une commande', () => {
+  const newOrder = { customer: 'New', nbDays: 3, tjm: 400, tauxTva: 20 };
+  const createdOrder = { id: 1, ...newOrder, totalHt: 1200, totalTtc: 1440 };
+
+  service.createOrder(newOrder);
+
+  const req = httpMock.expectOne('http://localhost:3000/orders');
+  expect(req.request.method).toBe('POST');
+  expect(req.request.body).toEqual(expect.objectContaining({ customer: 'New' }));
+  req.flush(createdOrder);
+});
+```
+
+### PUT
+
+```typescript
+it('devrait modifier une commande', () => {
+  const updatedOrder = { id: 1, customer: 'Updated', nbDays: 5, tjm: 500, tauxTva: 20 };
+
+  service.updateOrder(updatedOrder);
+
+  const req = httpMock.expectOne('http://localhost:3000/orders/1');
+  expect(req.request.method).toBe('PUT');
+  req.flush({ ...updatedOrder, totalHt: 2500, totalTtc: 3000 });
+});
+```
+
+### DELETE
+
+```typescript
+it('devrait supprimer une commande', () => {
+  service.deleteOrder(1);
+
+  const req = httpMock.expectOne('http://localhost:3000/orders/1');
+  expect(req.request.method).toBe('DELETE');
+  req.flush({});
+});
+```
+
+## Tests d'erreurs HTTP
+
+```typescript
+it('devrait gérer une erreur 404', () => {
+  service.loadOrders();
+
+  const req = httpMock.expectOne('http://localhost:3000/orders');
+  req.flush('Not Found', { status: 404, statusText: 'Not Found' });
+
+  expect(service.error()).toContain('404');
+  expect(service.loading()).toBe(false);
+});
+
+it('devrait gérer une erreur réseau', () => {
+  service.loadOrders();
+
+  const req = httpMock.expectOne('http://localhost:3000/orders');
+  req.error(new ProgressEvent('error'));
+
+  expect(service.error()).toBeTruthy();
+  expect(service.loading()).toBe(false);
+});
+```
+
+## Pattern Arrange-Act-Assert
+
+```typescript
+it('devrait calculer le total TTC', () => {
+  // Arrange
+  const order = { nbDays: 5, tjm: 500, tauxTva: 20 };
+
+  // Act
+  const result = service.calculateTotalTtc(order);
+
+  // Assert
+  expect(result).toBe(3000); // 5 * 500 * 1.20
+});
+```
+
+## Conventions
+
+- Noms des tests en **français**
+- Pattern **Arrange-Act-Assert**
+- Un `describe` par méthode/fonctionnalité
+- `afterEach(() => httpMock.verify())` obligatoire
+- Utiliser `vi.fn()` et `vi.spyOn()` (pas jasmine)
+- Utiliser `await fixture.whenStable()` en zoneless
+- Une assertion principale par test
+
+## Migration Jasmine vers Vitest
+
+Si vous avez du code Jasmine existant :
+
+```bash
+ng g @angular/core:convert-to-vitest
+```
+
+Ou manuellement, remplacer :
+
+- `spyOn` → `vi.spyOn`
+- `jasmine.createSpy()` → `vi.fn()`
+- `.and.returnValue()` → `.mockReturnValue()`
+- `fit/fdescribe` → `it.only/describe.only`
+- `xit/xdescribe` → `it.skip/describe.skip`
