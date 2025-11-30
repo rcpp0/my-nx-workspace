@@ -272,6 +272,87 @@ Avant de créer un composant/service, vérifier :
 9. [ ] Les formulaires sont-ils réactifs (FormBuilder) ?
 10. [ ] Les tests utilisent-ils Vitest avec `provideZonelessChangeDetection()` ?
 11. [ ] Les tests utilisent-ils `fixture.whenStable()` au lieu de `detectChanges()` ?
+12. [ ] **Documentation JSDoc/TSDoc ajoutée pour l'API publique** (services, composants shared-ui)
+
+## 📝 Documentation JSDoc/TSDoc (Obligatoire)
+
+Tu DOIS systématiquement :
+
+1. **Documenter l'API publique** : Services dans `data-access`, composants dans `shared-ui`
+2. **Utiliser les tags Compodoc** : `@usageNotes`, `@category`, `@see`, `@example`
+3. **Documenter inputs/outputs** : Toujours, avec type et description
+4. **Documenter signals publics** : Avec `@readonly` ou `@computed`
+5. **Ajouter des exemples** : Dans `@usageNotes` ou `@example`
+6. **Références croisées** : Utiliser `@see` pour lier les éléments
+
+**Ne PAS documenter** : Code trivial, tests simples, variables privées évidentes
+
+### Exemple : Service
+
+```typescript
+/**
+ * Service for managing contacts data and operations.
+ * 
+ * Handles all HTTP requests related to contacts.
+ * 
+ * @usageNotes
+ * Inject this service:
+ * ```typescript
+ * private contactsService = inject(ContactsService);
+ * ```
+ * 
+ * @see Contact
+ * @category Data Access
+ */
+@Injectable({ providedIn: 'root' })
+export class ContactsService {
+  /**
+   * Retrieves all contacts from the API.
+   * 
+   * @returns Observable of contacts array
+   * @throws {HttpErrorResponse} When API request fails
+   */
+  getContacts(): Observable<Contact[]> {
+    return this.http.get<Contact[]>(`${API_URL}/contacts`);
+  }
+}
+```
+
+### Exemple : Composant
+
+```typescript
+/**
+ * Spinner component for loading states.
+ * 
+ * @usageNotes
+ * ```html
+ * <lib-spinner [size]="'lg'" />
+ * ```
+ * 
+ * @category Shared UI
+ */
+@Component({
+  selector: 'lib-spinner',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SpinnerComponent {
+  /**
+   * Size of the spinner
+   * @default 'md'
+   */
+  size = input<'sm' | 'md' | 'lg'>('md');
+}
+```
+
+### Vérification de la Documentation
+
+Après avoir créé du code documenté, vérifier avec :
+
+```bash
+npm run docs:coverage
+```
+
+L'objectif est d'avoir une couverture > 80%.
 
 ## 🚀 Exemples de Prompts que Tu Peux Traiter
 

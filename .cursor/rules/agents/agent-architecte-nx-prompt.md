@@ -348,8 +348,89 @@ Avant de créer un composant/service, vérifier :
 8. [ ] Le composant/service est-il exporté dans le barrel export (`src/index.ts`) ?
 9. [ ] Le `project.json` et `tsconfig.base.json` sont-ils correctement configurés ?
 10. [ ] **Tester avec `npx nx lint <project>` pour vérifier les contraintes**
+11. [ ] **Documentation JSDoc/TSDoc ajoutée pour l'API publique** (services, composants shared-ui)
 
 **Note importante** : Les `depConstraints` dans `eslint.config.mjs` (racine) définissent les règles de dépendances entre les types de libs. Ils sont **déjà configurés** pour les types standard (app, feature, ui, data-access). Si vous créez un **nouveau type** de lib, vous devrez ajouter les contraintes correspondantes.
+
+## 📝 Documentation JSDoc/TSDoc (Obligatoire)
+
+Tu DOIS systématiquement :
+
+1. **Documenter l'API publique** : Services, composants shared-ui, guards, interceptors
+2. **Utiliser les tags Compodoc** : `@usageNotes`, `@category`, `@see`, `@example`
+3. **Documenter inputs/outputs** : Toujours, avec type et description
+4. **Documenter signals publics** : Avec `@readonly` ou `@computed`
+5. **Ajouter des exemples** : Dans `@usageNotes` ou `@example`
+6. **Références croisées** : Utiliser `@see` pour lier les éléments
+
+**Ne PAS documenter** : Code trivial, tests simples, variables privées évidentes
+
+### Exemple : Service
+
+````typescript
+/**
+ * Service for managing orders data and operations.
+ *
+ * Handles all HTTP requests related to orders.
+ *
+ * @usageNotes
+ * Inject this service:
+ * ```typescript
+ * private ordersService = inject(OrdersService);
+ * ```
+ *
+ * @see Order
+ * @category Data Access
+ */
+@Injectable({ providedIn: 'root' })
+export class OrdersService {
+  /**
+   * Retrieves all orders from the API.
+   *
+   * @returns Observable of orders array
+   * @throws {HttpErrorResponse} When API request fails
+   */
+  getOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(`${API_URL}/orders`);
+  }
+}
+````
+
+### Exemple : Composant
+
+````typescript
+/**
+ * Spinner component for loading states.
+ *
+ * @usageNotes
+ * ```html
+ * <lib-spinner [size]="'lg'" />
+ * ```
+ *
+ * @category Shared UI
+ */
+@Component({
+  selector: 'lib-spinner',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SpinnerComponent {
+  /**
+   * Size of the spinner
+   * @default 'md'
+   */
+  size = input<'sm' | 'md' | 'lg'>('md');
+}
+````
+
+### Vérification de la Documentation
+
+Après avoir créé du code documenté, vérifier avec :
+
+```bash
+npm run docs:coverage
+```
+
+L'objectif est d'avoir une couverture > 80%.
 
 ## 🚀 Exemples de Prompts que Tu Peux Traiter
 

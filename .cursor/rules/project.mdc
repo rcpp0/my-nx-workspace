@@ -42,6 +42,10 @@ npm install @types/bootstrap --save-dev
     "server": "json-server --watch db.json --port 3000",
     "server:auth": "json-server-auth db.json --port 3000",
     "dev": "concurrently \"npm start\" \"npm run server\"",
+    "docs": "compodoc -p apps/mini-crm/tsconfig.app.json -s --port 8080",
+    "docs:build": "compodoc -p apps/mini-crm/tsconfig.app.json -d docs/compodoc",
+    "docs:coverage": "compodoc -p apps/mini-crm/tsconfig.app.json --coverageTest 80",
+    "docs:watch": "compodoc -p apps/mini-crm/tsconfig.app.json -s --watch",
     "graph": "nx graph",
     "graph:app": "nx graph --focus=mini-crm",
     "graph:affected": "nx graph --affected",
@@ -435,75 +439,289 @@ search_documentation("error message")
 11. [ ] Classes Bootstrap en priorité
 12. [ ] Imports avec alias Nx (`@mini-crm/...`)
 
-## Commentaires et Documentation
+## Commentaires et Documentation (JSDoc/TSDoc + Compodoc)
 
-### Règles Générales
+### Philosophie
 
 - ✅ Privilégier un code **auto-documenté** (noms explicites, types clairs)
 - ✅ Commenter **le pourquoi**, pas **le quoi**
-- ❌ Éviter les commentaires redondants avec TypeScript
-- ✅ Utiliser JSDoc pour l'API publique (services, composants réutilisables)
-
-### Quand Commenter (Obligatoire)
-
-1. **Services publics** : Tous les services dans `data-access/`
-
-   - Description du service
-   - Description des méthodes publiques
-   - Paramètres avec `@param`
-   - Valeur de retour avec `@returns`
-
-2. **Composants réutilisables** : Tous les composants dans `shared-ui/`
-
-   - Description du composant
-   - Exemple d'utilisation avec `@example`
-   - Inputs/Outputs avec description brève si non-évident
-
-3. **Logique métier complexe** : Fonctions avec calculs ou algorithmes
-
-   - Explication de la formule ou de l'algorithme
-   - Edge cases gérés
-
-4. **Guards, Interceptors, Validators custom** : Toujours
-   - Comportement et cas d'usage
-
-### Quand NE PAS Commenter
-
-- ❌ Getters/Setters simples
-- ❌ Inputs/Outputs avec nom et type explicites
-- ❌ Tests unitaires simples (la description du test suffit)
-- ❌ Code évident (ex: `this.loading.set(true)`)
-
-### Format JSDoc/TSDoc
-
-````typescript
-/**
-
-- Description courte sur une ligne.
--
-- Description longue optionnelle avec plus de détails.
-- Peut être sur plusieurs lignes.
--
-- @param paramName - Description du paramètre
-- @returns Description de la valeur retournée
-- @throws Description de l'erreur potentielle
-- @example
-- ```typescript
-- const result = myFunction('test');
-- ```
-*/
-````
+- ✅ Documenter **l'API publique** pour Compodoc
+- ❌ Éviter les commentaires redondants
 
 ### Outils
 
-- **TypeDoc** : Génération automatique de documentation
-- **ESLint** : Règles `jsdoc/*` pour valider les commentaires
-- **TSDoc** : Standard Microsoft pour TypeScript
+- **Compodoc** : Documentation automatique Angular (`npm run docs`)
+- **TypeDoc** : Documentation TypeScript générique
+- **ESLint** : Validation JSDoc avec règles `jsdoc/*`
 
-### Checklist
+### Quand Documenter (OBLIGATOIRE)
 
-- [ ] Services publics documentés (JSDoc)
-- [ ] Composants shared-ui documentés avec exemples
-- [ ] Logique métier complexe expliquée
-- [ ] Commentaires à jour (pas de code commenté mort)
-- [ ] Pas de commentaires redondants
+#### 1. Services Publics (`data-access/`)
+
+````typescript
+/**
+ * Service for managing orders data and operations.
+ *
+ * Handles all HTTP requests related to orders including CRUD operations.
+ *
+ * @usageNotes
+ * Inject this service in components or other services:
+ * ```typescript
+ * private ordersService = inject(OrdersService);
+ * ```
+ *
+ * @see Order
+ * @category Data Access
+ */
+@Injectable({ providedIn: 'root' })
+export class OrdersService {
+  /**
+   * Retrieves all orders from the API.
+   *
+   * @returns Observable of orders array
+   * @throws {HttpErrorResponse} When API request fails
+   *
+   * @example
+   * ```typescript
+   * this.ordersService.getOrders().subscribe({
+   *   next: (orders) => console.log(orders)
+   * });
+   * ```
+   */
+  getOrders(): Observable<Order[]> {
+    return this.http.get<Order[]>(`${API_URL}/orders`);
+  }
+}
+````
+
+#### 2. Composants Réutilisables (`shared-ui/`)
+
+````typescript
+/**
+ * Spinner component for loading states.
+ *
+ * Displays a Bootstrap spinner with customizable size and color.
+ *
+ * @usageNotes
+ * ### Basic Usage
+ * ```html
+ * <lib-spinner />
+ * ```
+ *
+ * @see SkeletonComponent
+ * @category Shared UI
+ */
+@Component({
+  selector: 'lib-spinner',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class SpinnerComponent {
+  /**
+   * Size of the spinner
+   * @default 'md'
+   */
+  size = input<'sm' | 'md' | 'lg'>('md');
+
+  /**
+   * Color variant using Bootstrap colors
+   * @default 'primary'
+   */
+  variant = input<'primary' | 'secondary'>('primary');
+}
+````
+
+#### 3. Signals et State Management
+
+```typescript
+/**
+ * Current loading state
+ * @internal - Not exposed in public API
+ */
+private loading = signal(false);
+
+/**
+ * List of orders
+ * @readonly - Use methods to modify
+ */
+orders = signal<Order[]>([]);
+
+/**
+ * Total number of orders
+ * @computed
+ */
+totalOrders = computed(() => this.orders().length);
+
+/**
+ * Selected order, linked to orders list
+ * @linkedSignal
+ */
+selectedOrder = linkedSignal(() => this.orders()[0]);
+```
+
+#### 4. Guards, Interceptors, Validators
+
+````typescript
+/**
+ * Authentication guard to protect routes.
+ *
+ * Redirects to login page if user is not authenticated.
+ *
+ * @usageNotes
+ * Apply to routes in routing configuration:
+ * ```typescript
+ * {
+ *   path: 'orders',
+ *   canActivate: [authGuard]
+ * }
+ * ```
+ *
+ * @see AuthService
+ * @category Security
+ */
+export const authGuard: CanActivateFn = (route, state) => {
+  // Implementation
+};
+````
+
+#### 5. Models et Interfaces
+
+```typescript
+/**
+ * Represents an order in the system.
+ *
+ * @category Models
+ * @see OrdersService
+ */
+export interface Order {
+  /**
+   * Unique identifier
+   * @format uuid
+   */
+  id: string;
+
+  /**
+   * Order title/name
+   * @minLength 3
+   * @maxLength 100
+   */
+  title: string;
+
+  /**
+   * Order amount in euros
+   * @minimum 0
+   */
+  amount: number;
+
+  /**
+   * Current order status
+   * @default 'pending'
+   */
+  status: OrderStatus;
+}
+
+/**
+ * Order status enumeration
+ * @category Models
+ */
+export enum OrderStatus {
+  /** Order is awaiting processing */
+  Pending = 'pending',
+  /** Order has been confirmed */
+  Confirmed = 'confirmed',
+}
+```
+
+### Documentation des Inputs/Outputs
+
+```typescript
+/**
+ * User data to display in the card
+ * @required
+ */
+user = input.required<User>();
+
+/**
+ * Optional CSS classes to apply
+ */
+customClass = input<string>('');
+
+/**
+ * Emitted when user clicks the edit button
+ * @event
+ * @param user - The edited user data
+ */
+userEdited = output<User>();
+```
+
+### Quand NE PAS Commenter
+
+- ❌ Getters/Setters simples sans logique
+- ❌ Tests unitaires simples (le `it()` suffit)
+- ❌ Code évident (ex: `this.loading.set(true)`)
+- ❌ Variables privées internes triviales
+- ❌ Méthodes privées simples (sauf logique complexe)
+
+### Tags Compodoc Essentiels
+
+| Tag           | Usage                 | Exemple                        |
+| ------------- | --------------------- | ------------------------------ |
+| `@usageNotes` | Comment utiliser      | Exemples d'usage               |
+| `@see`        | Références croisées   | `@see OrdersService`           |
+| `@category`   | Catégorie Compodoc    | Data Access, UI, Feature       |
+| `@throws`     | Erreurs possibles     | `@throws {HttpErrorResponse}`  |
+| `@deprecated` | Code obsolète         | Migration vers nouvelle API    |
+| `@example`    | Exemples de code      | Blocs de code illustratifs     |
+| `@default`    | Valeur par défaut     | `@default 'primary'`           |
+| `@param`      | Description paramètre | `@param user - User data`      |
+| `@returns`    | Valeur de retour      | `@returns Observable<Order[]>` |
+| `@internal`   | API interne           | Ne pas utiliser                |
+| `@readonly`   | Lecture seule         | Signal en lecture seule        |
+| `@computed`   | Signal computed       | Valeur dérivée                 |
+| `@event`      | Output/EventEmitter   | Événement émis                 |
+
+### Tags Avancés (Optionnels)
+
+```typescript
+/**
+ * @since 2.0.0
+ * @version 2.1.0
+ * @alpha  // ou @beta, @experimental
+ * @public     // Exposé dans l'API (défaut)
+ * @protected  // Héritage uniquement
+ * @private    // Usage interne
+ */
+```
+
+### Génération de la Documentation
+
+#### Scripts disponibles
+
+```bash
+# Générer et servir la doc (mode dev)
+npm run docs
+
+# Build statique
+npm run docs:build
+
+# Vérifier la couverture
+npm run docs:coverage
+```
+
+#### Configuration
+
+La configuration Compodoc est dans `.compodocrc.json` à la racine du projet.
+
+### Checklist Documentation
+
+Avant de commit :
+
+- [ ] Services publics documentés avec JSDoc complet
+- [ ] Composants shared-ui avec `@usageNotes` et exemples
+- [ ] Tous les inputs/outputs publics documentés
+- [ ] Signals publics avec `@readonly` ou `@computed`
+- [ ] Guards/Interceptors avec `@usageNotes`
+- [ ] Models/Interfaces avec descriptions des propriétés
+- [ ] Tags `@category` pour organisation Compodoc
+- [ ] Tags `@see` pour références croisées
+- [ ] Pas de code commenté mort
+- [ ] Coverage Compodoc > 80% (vérifier avec `npm run docs:coverage`)
