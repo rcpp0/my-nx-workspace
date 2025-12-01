@@ -1,0 +1,34 @@
+{
+  "users": [],
+  "orders": [
+    {
+      "id": 1,
+      "customer": "Acme Corp",
+      "nbDays": 5,
+      "tjm": 650,
+      "tauxTva": 20,
+      "totalHt": 3250,
+      "totalTtc": 3900
+    },
+    {
+      "id": 2,
+      "customer": "Tech Solutions",
+      "nbDays": 10,
+      "tjm": 700,
+      "tauxTva": 20,
+      "totalHt": 7000,
+      "totalTtc": 8400
+    },
+    {
+      "id": 3,
+      "customer": "Digital Agency",
+      "nbDays": 3,
+      "tjm": 600,
+      "tauxTva": 20,
+      "totalHt": 1800,
+      "totalTtc": 2160
+    }
+  ]
+}
+
+
