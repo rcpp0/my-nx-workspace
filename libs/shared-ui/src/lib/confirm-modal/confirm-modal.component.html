@@ -1,0 +1,61 @@
+@if (visible()) {
+  <!-- Modal Backdrop -->
+  <div
+    class="modal-backdrop fade show"
+    (click)="onBackdropClick($event)"
+    (keydown.escape)="onEscapeKey($event)"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="'confirm-modal-title'"
+  ></div>
+
+  <!-- Modal Dialog -->
+  <div
+    class="modal fade show"
+    [class.modal-visible]="visible()"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="'confirm-modal-title'"
+  >
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirm-modal-title">{{ title() }}</h5>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Fermer"
+            (click)="onCancel()"
+          ></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+          <p>{{ message() }}</p>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+          <button
+            type="button"
+            [class]="cancelButtonClasses()"
+            (click)="onCancel()"
+          >
+            {{ cancelLabel() }}
+          </button>
+          <button
+            type="button"
+            [class]="confirmButtonClasses()"
+            (click)="onConfirm()"
+          >
+            {{ confirmLabel() }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+

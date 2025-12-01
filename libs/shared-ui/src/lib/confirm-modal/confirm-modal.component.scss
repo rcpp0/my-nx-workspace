@@ -1,0 +1,43 @@
+// ============================================
+// 1. VARIABLES CSS CUSTOM DU COMPONENT
+// ============================================
+:host {
+  // Variables de layout
+  --modal-z-index: 1055; // Bootstrap default modal z-index
+  --modal-backdrop-z-index: 1050; // Bootstrap default backdrop z-index
+
+  // Host display
+  display: block;
+}
+
+// ============================================
+// 2. STYLES DU COMPONENT
+// ============================================
+.modal-backdrop {
+  z-index: var(--modal-backdrop-z-index);
+}
+
+.modal {
+  z-index: var(--modal-z-index);
+}
+
+// Ensure modal is properly displayed when visible
+.modal.show.modal-visible {
+  display: block !important;
+}
+
+// ============================================
+// 3. ACCESSIBILITY
+// ============================================
+.modal {
+  // Ensure focus trap works properly
+  &:focus {
+    outline: none;
+  }
+}
+
+.modal-dialog {
+  // Ensure modal is centered
+  margin: 1.75rem auto;
+}
+

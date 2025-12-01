@@ -1,0 +1,38 @@
+// ============================================
+// 1. VARIABLES CSS CUSTOM DU COMPONENT
+// ============================================
+:host {
+  // Variables de layout
+  --spinner-container-display: flex;
+  --spinner-container-justify: center;
+  --spinner-container-align: center;
+  --spinner-container-padding: 1rem;
+
+  // Variables de taille pour spinner-lg
+  --spinner-lg-width: 3rem;
+  --spinner-lg-height: 3rem;
+  --spinner-lg-border-width: 0.35rem;
+
+  // Host display
+  display: block;
+}
+
+// ============================================
+// 2. STYLES DU COMPONENT
+// ============================================
+.spinner-container {
+  display: var(--spinner-container-display);
+  justify-content: var(--spinner-container-justify);
+  align-items: var(--spinner-container-align);
+  padding: var(--spinner-container-padding);
+}
+
+// ============================================
+// 3. TAILLE LG (Bootstrap n'a pas spinner-border-lg)
+// ============================================
+.spinner-border-lg {
+  width: var(--spinner-lg-width);
+  height: var(--spinner-lg-height);
+  border-width: var(--spinner-lg-border-width);
+}
+
