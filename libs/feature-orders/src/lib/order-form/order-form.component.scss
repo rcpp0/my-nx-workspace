@@ -13,15 +13,15 @@
   --order-form-card-border-radius: var(--bs-border-radius);
   --order-form-card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 
-  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
-  --order-form-card-bg: var(--bs-light);
-  --order-form-card-border: var(--bs-border-color);
-  --order-form-total-primary: var(--bs-primary);
+  // Variables de couleurs (thème Terminal)
+  --order-form-card-bg: var(--terminal-bg-alt);
+  --order-form-card-border: var(--terminal-border-dim);
+  --order-form-total-primary: var(--terminal-text-bright);
 
   // Variables de focus (accessibilité WCAG AA)
-  --order-form-input-focus-border: var(--bs-primary);
-  --order-form-input-focus-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
-  --order-form-btn-focus-outline: 2px solid var(--bs-primary);
+  --order-form-input-focus-border: var(--terminal-text);
+  --order-form-input-focus-shadow: var(--terminal-glow);
+  --order-form-btn-focus-outline: 2px solid var(--terminal-text);
   --order-form-btn-focus-outline-offset: 2px;
 
   // Host display
@@ -36,6 +36,7 @@ form {
   display: flex;
   flex-direction: column;
   gap: var(--order-form-gap);
+  font-family: var(--terminal-font);
 }
 
 // Form control focus states améliorés
@@ -58,8 +59,21 @@ form {
 .card {
   background-color: var(--order-form-card-bg);
   border: 1px solid var(--order-form-card-border);
-  border-radius: var(--order-form-card-border-radius);
+  border-radius: 0;
   box-shadow: var(--order-form-card-shadow);
+  font-family: var(--terminal-font);
+  position: relative;
+
+  &::before {
+    content: '> TOTALS';
+    position: absolute;
+    top: -1.25rem;
+    left: 0;
+    color: var(--terminal-text-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.5;
+  }
 }
 
 .card-body {

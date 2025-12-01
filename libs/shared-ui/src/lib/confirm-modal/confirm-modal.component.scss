@@ -10,11 +10,11 @@
   --modal-dialog-margin: 1.75rem auto;
   --modal-dialog-margin-mobile: 0.5rem;
 
-  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
-  --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+  // Variables de couleurs (thème Terminal)
+  --modal-backdrop-bg: rgba(0, 0, 0, 0.95);
 
   // Variables de focus (accessibilité WCAG AA)
-  --modal-btn-focus-outline: 2px solid var(--bs-primary);
+  --modal-btn-focus-outline: 2px solid var(--terminal-text);
   --modal-btn-focus-outline-offset: 2px;
 
   // Host display

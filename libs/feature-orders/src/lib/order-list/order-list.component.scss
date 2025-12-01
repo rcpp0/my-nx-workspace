@@ -11,12 +11,13 @@
   --order-list-table-gap: 1.5rem;
   --order-list-table-border-radius: var(--bs-border-radius);
 
-  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
+  // Variables de couleurs (thème Terminal)
   --order-list-header-bg: transparent;
-  --order-list-table-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --order-list-table-shadow: var(--terminal-glow);
+  --order-list-table-border: var(--terminal-border-dim);
 
   // Variables de focus (accessibilité WCAG AA)
-  --order-list-btn-focus-outline: 2px solid var(--bs-primary);
+  --order-list-btn-focus-outline: 2px solid var(--terminal-text);
   --order-list-btn-focus-outline-offset: 2px;
   --order-list-btn-group-gap: 0.25rem;
 
@@ -30,20 +31,51 @@
 // ============================================
 .order-list-container {
   padding: var(--order-list-container-padding);
+  font-family: var(--terminal-font);
+  color: var(--terminal-text);
 }
 
 // Header styling avec variables CSS
 .order-list-container > .d-flex {
   gap: var(--order-list-header-gap);
   margin-bottom: var(--order-list-table-gap);
+
+  h2 {
+    color: var(--terminal-text-bright);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: normal;
+    font-family: var(--terminal-font);
+    text-shadow: var(--terminal-glow);
+
+    &::before {
+      content: '$ ';
+      color: var(--terminal-accent);
+      margin-right: 0.5rem;
+    }
+  }
 }
 
 // Table responsive container
 .table-responsive {
-  border-radius: var(--order-list-table-border-radius);
+  border-radius: 0;
   box-shadow: var(--order-list-table-shadow);
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--order-list-table-border);
+  font-family: var(--terminal-font);
+  position: relative;
+
+  &::before {
+    content: '> ORDERS TABLE';
+    position: absolute;
+    top: -1.5rem;
+    left: 0;
+    color: var(--terminal-text-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.5;
+  }
 }
 
 // Table styling amélioré

@@ -13,12 +13,12 @@
   --sign-in-card-gap: 1.5rem;
   --sign-in-form-gap: 1rem;
 
-  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
-  --sign-in-card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075),
-    0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  // Variables de couleurs (thème Terminal)
+  --sign-in-card-shadow: var(--terminal-glow);
+  --sign-in-card-border: var(--terminal-border);
 
   // Variables de focus (accessibilité WCAG AA)
-  --sign-in-link-focus-outline: 2px solid var(--bs-primary);
+  --sign-in-link-focus-outline: 2px solid var(--terminal-text);
   --sign-in-link-focus-outline-offset: 2px;
 
   // Host display
@@ -35,14 +35,45 @@
   align-items: center;
   min-height: 100vh;
   padding: var(--sign-in-container-padding);
-  background-color: var(--bs-body-bg);
+  background-color: var(--terminal-bg);
+  font-family: var(--terminal-font);
+  position: relative;
+
+  &::before {
+    content: '> LOGIN REQUIRED';
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    color: var(--terminal-text-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    opacity: 0.5;
+  }
 }
 
 .card {
   width: 100%;
   max-width: var(--sign-in-container-max-width);
   box-shadow: var(--sign-in-card-shadow);
-  border: 1px solid var(--bs-border-color);
+  border: 2px solid var(--sign-in-card-border);
+  background-color: var(--terminal-bg-alt);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--terminal-text),
+      transparent
+    );
+    animation: scanline-horizontal 2s linear infinite;
+  }
 }
 
 .card-body {
@@ -50,9 +81,19 @@
 }
 
 .card-title {
-  color: var(--bs-dark);
-  font-weight: 600;
+  color: var(--terminal-text-bright);
+  font-weight: normal;
   margin-bottom: var(--sign-in-card-gap);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-align: center;
+  font-family: var(--terminal-font);
+  text-shadow: var(--terminal-glow);
+
+  &::before {
+    content: '$ ';
+    color: var(--terminal-accent);
+  }
 }
 
 // Form styling
@@ -64,28 +105,31 @@ form {
 
 // Link styling avec focus pour accessibilité
 a {
-  color: var(--bs-primary);
+  color: var(--terminal-accent);
   text-decoration: none;
-  transition: color 0.2s ease, text-decoration 0.2s ease;
+  border-bottom: 1px dotted var(--terminal-accent);
+  transition: all 0.2s ease;
+  font-family: var(--terminal-font);
 
   &:hover {
-    color: var(--bs-primary);
-    text-decoration: underline;
+    color: var(--terminal-accent-dim);
+    border-bottom-style: solid;
+    text-shadow: var(--terminal-glow-accent);
   }
 
   // Focus state (accessibilité WCAG AA)
   &:focus-visible {
     outline: var(--sign-in-link-focus-outline);
     outline-offset: var(--sign-in-link-focus-outline-offset);
-    border-radius: var(--bs-border-radius);
-    text-decoration: underline;
+    border-radius: 0;
   }
 }
 
-// Button focus state amélioré (Bootstrap gère déjà le focus, mais on peut améliorer)
+// Button focus state amélioré
 .btn:focus-visible {
-  outline: 2px solid var(--bs-primary);
+  outline: 2px solid var(--terminal-text);
   outline-offset: 2px;
+  box-shadow: var(--terminal-glow);
 }
 
 // ============================================

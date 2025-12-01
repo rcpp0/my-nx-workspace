@@ -13,18 +13,20 @@
   --sidebar-icon-size: 1.25rem;
   --sidebar-transition-duration: 0.2s;
 
-  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
-  --sidebar-bg: var(--bs-light);
-  --sidebar-border: var(--bs-border-color);
-  --sidebar-link-color: var(--bs-dark);
-  --sidebar-link-hover-bg: var(--bs-gray-200);
-  --sidebar-link-active-bg: var(--bs-primary);
-  --sidebar-link-active-color: var(--bs-white);
+  // Variables de couleurs (thème Terminal)
+  --sidebar-bg: var(--terminal-bg-alt);
+  --sidebar-border: var(--terminal-border-dim);
+  --sidebar-link-color: var(--terminal-text-dim);
+  --sidebar-link-hover-bg: rgba(0, 255, 0, 0.05);
+  --sidebar-link-hover-color: var(--terminal-text-bright);
+  --sidebar-link-active-bg: transparent;
+  --sidebar-link-active-color: var(--terminal-text-bright);
+  --sidebar-link-active-border: var(--terminal-text);
 
   // Variables de focus (accessibilité WCAG AA)
-  --sidebar-link-focus-outline: 2px solid var(--bs-primary);
+  --sidebar-link-focus-outline: 2px solid var(--terminal-text);
   --sidebar-link-focus-outline-offset: 2px;
-  --sidebar-link-focus-bg: var(--bs-gray-100);
+  --sidebar-link-focus-bg: rgba(0, 255, 0, 0.1);
 
   // Host display
   display: block;
@@ -42,6 +44,23 @@
   border-right: 1px solid var(--sidebar-border);
   overflow-y: auto;
   overflow-x: hidden;
+  font-family: var(--terminal-font);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      var(--terminal-border-dim),
+      transparent
+    );
+  }
 }
 
 .sidebar-nav {
@@ -51,26 +70,51 @@
 // Override Bootstrap nav styles avec variables CSS
 .nav-link {
   color: var(--sidebar-link-color);
-  border-radius: var(--bs-border-radius);
+  border-radius: 0;
   padding: var(--sidebar-link-padding-y) var(--sidebar-link-padding-x);
   display: flex;
   align-items: center;
   gap: var(--sidebar-link-gap);
   text-decoration: none;
-  transition: background-color var(--sidebar-transition-duration) ease,
-    color var(--sidebar-transition-duration) ease;
+  transition: all var(--sidebar-transition-duration) ease;
+  border-left: 2px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  font-family: var(--terminal-font);
+
+  &::before {
+    content: '> ';
+    color: var(--terminal-accent);
+    opacity: 0;
+    transition: opacity var(--sidebar-transition-duration) ease;
+  }
 
   // Hover state
   &:hover:not(.active) {
     background-color: var(--sidebar-link-hover-bg);
-    color: var(--sidebar-link-color);
+    color: var(--sidebar-link-hover-color);
+    border-left-color: var(--terminal-border-dim);
+    box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.1);
+
+    &::before {
+      opacity: 1;
+    }
   }
 
   // Active state (route active)
   &.active {
     background-color: var(--sidebar-link-active-bg);
     color: var(--sidebar-link-active-color);
-    font-weight: 500;
+    font-weight: normal;
+    border-left-color: var(--sidebar-link-active-border);
+    box-shadow: inset 0 0 15px rgba(0, 255, 0, 0.2);
+    text-shadow: var(--terminal-glow);
+
+    &::before {
+      opacity: 1;
+      color: var(--terminal-text-bright);
+    }
   }
 
   // Focus state (accessibilité WCAG AA)

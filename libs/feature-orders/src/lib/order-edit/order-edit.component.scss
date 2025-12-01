@@ -11,8 +11,8 @@
   --order-edit-header-margin-bottom: 1.5rem;
   --order-edit-alert-margin-bottom: 1.5rem;
 
-  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
-  --order-edit-bg: var(--bs-body-bg);
+  // Variables de couleurs (thème Terminal)
+  --order-edit-bg: var(--terminal-bg);
 
   // Host display
   display: block;
@@ -31,8 +31,18 @@
 
 h2 {
   margin-bottom: var(--order-edit-header-margin-bottom);
-  color: var(--bs-dark);
-  font-weight: 600;
+  color: var(--terminal-text-bright);
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: var(--terminal-font);
+  text-shadow: var(--terminal-glow);
+
+  &::before {
+    content: '$ ';
+    color: var(--terminal-accent);
+    margin-right: 0.5rem;
+  }
 }
 
 .alert {
