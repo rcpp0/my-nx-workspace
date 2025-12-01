@@ -1,5 +1,5 @@
-<aside class="sidebar">
-  <nav class="sidebar-nav">
+<aside class="sidebar" role="complementary" aria-label="Navigation principale">
+  <nav class="sidebar-nav" aria-label="Menu de navigation">
     <ul class="nav flex-column">
       <li class="nav-item">
         <a
@@ -7,8 +7,9 @@
           routerLink="/orders"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: false }"
+          aria-current="page"
         >
-          <i class="bi bi-list-ul me-2"></i>
+          <i class="bi bi-list-ul" aria-hidden="true"></i>
           <span>Commandes</span>
         </a>
       </li>

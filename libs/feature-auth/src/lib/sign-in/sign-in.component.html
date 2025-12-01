@@ -9,7 +9,7 @@
         </div>
       }
 
-      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" aria-label="Formulaire de connexion">
         <!-- Email Field -->
         <div class="mb-3">
           <label for="email" class="form-label">Email</label>
@@ -23,9 +23,10 @@
             autocomplete="email"
             [attr.aria-describedby]="getEmailError() ? 'email-error' : null"
             [attr.aria-invalid]="getEmailError() ? 'true' : 'false'"
+            [attr.aria-required]="true"
           />
           @if (getEmailError()) {
-            <div id="email-error" class="invalid-feedback">
+            <div id="email-error" class="invalid-feedback" role="alert">
               {{ getEmailError() }}
             </div>
           }
@@ -44,9 +45,10 @@
             autocomplete="current-password"
             [attr.aria-describedby]="getPasswordError() ? 'password-error' : null"
             [attr.aria-invalid]="getPasswordError() ? 'true' : 'false'"
+            [attr.aria-required]="true"
           />
           @if (getPasswordError()) {
-            <div id="password-error" class="invalid-feedback">
+            <div id="password-error" class="invalid-feedback" role="alert">
               {{ getPasswordError() }}
             </div>
           }
@@ -58,6 +60,7 @@
             type="submit"
             class="btn btn-primary"
             [disabled]="loading() || form.invalid"
+            [attr.aria-busy]="loading()"
           >
             @if (loading()) {
               <span
@@ -65,9 +68,9 @@
                 role="status"
                 aria-hidden="true"
               ></span>
-              Connexion...
+              <span aria-live="polite">Connexion...</span>
             } @else {
-              <i class="bi bi-box-arrow-in-right me-2"></i>
+              <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
               Se connecter
             }
           </button>
@@ -78,7 +81,7 @@
       <div class="text-center mt-3">
         <p class="mb-0">
           Pas encore de compte ?
-          <a routerLink="/auth/sign-up" class="text-decoration-none">
+          <a routerLink="/auth/sign-up" class="text-decoration-none" aria-label="Créer un nouveau compte">
             Créer un compte
           </a>
         </p>

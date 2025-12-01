@@ -1,16 +1,29 @@
 // ============================================
 // 1. VARIABLES CSS CUSTOM DU COMPONENT
 // ============================================
+// IMPORTANT : Bootstrap est déjà chargé globalement dans project.json
+// Utiliser directement les variables CSS Bootstrap (var(--bs-primary), etc.)
 :host {
   // Variables de layout
   --header-height: 60px;
-  --header-padding: 1rem 1.5rem;
+  --header-padding-x: 1.5rem;
+  --header-padding-y: 1rem;
+  --header-padding-x-mobile: 1rem;
+  --header-gap: 0.5rem;
+  --header-icon-size: 1.5rem;
+  --header-title-size: 1.25rem;
+  --header-title-size-mobile: 1.125rem;
 
-  // Variables de couleurs (utilisent les variables CSS Bootstrap)
+  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
   --header-bg: var(--bs-dark);
   --header-text: var(--bs-white);
-  --header-icon-size: 1.5rem;
+  --header-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
+  // Variables de focus (accessibilité WCAG AA)
+  --header-focus-outline: 2px solid var(--bs-primary);
+  --header-focus-outline-offset: 2px;
+
+  // Host display
   display: block;
 }
 
@@ -21,8 +34,8 @@
   height: var(--header-height);
   background-color: var(--header-bg);
   color: var(--header-text);
-  padding: var(--header-padding);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: var(--header-padding-y) var(--header-padding-x);
+  box-shadow: var(--header-shadow);
 }
 
 .header-content {
@@ -31,10 +44,36 @@
 
 .header-icon {
   font-size: var(--header-icon-size);
+  color: var(--header-text);
+  flex-shrink: 0;
 }
 
 .header-title {
-  font-size: 1.25rem;
+  font-size: var(--header-title-size);
   font-weight: 600;
+  color: var(--header-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+// ============================================
+// 3. ACCESSIBILITÉ (Focus states)
+// ============================================
+// Focus visible pour navigation clavier (WCAG AA)
+.header-content:focus-visible {
+  outline: var(--header-focus-outline);
+  outline-offset: var(--header-focus-outline-offset);
+  border-radius: var(--bs-border-radius);
+}
+
+// ============================================
+// 4. RESPONSIVE
+// ============================================
+@media (max-width: 575.98px) {
+  :host {
+    --header-padding-x: var(--header-padding-x-mobile);
+    --header-title-size: var(--header-title-size-mobile);
+    --header-icon-size: 1.25rem;
+  }
 }
 
