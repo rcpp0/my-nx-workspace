@@ -1,0 +1,40 @@
+// ============================================
+// 1. VARIABLES CSS CUSTOM DU COMPONENT
+// ============================================
+:host {
+  // Variables de layout
+  --header-height: 60px;
+  --header-padding: 1rem 1.5rem;
+
+  // Variables de couleurs (utilisent les variables CSS Bootstrap)
+  --header-bg: var(--bs-dark);
+  --header-text: var(--bs-white);
+  --header-icon-size: 1.5rem;
+
+  display: block;
+}
+
+// ============================================
+// 2. STYLES DU COMPONENT
+// ============================================
+.header {
+  height: var(--header-height);
+  background-color: var(--header-bg);
+  color: var(--header-text);
+  padding: var(--header-padding);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  height: 100%;
+}
+
+.header-icon {
+  font-size: var(--header-icon-size);
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+

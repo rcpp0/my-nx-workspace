@@ -1,8 +1,12 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import {
+  LayoutComponent,
+  HeaderComponent,
+  SidebarComponent,
+} from '@mini-crm/layout';
 
 @Component({
-  imports: [RouterModule],
+  imports: [LayoutComponent, HeaderComponent, SidebarComponent],
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

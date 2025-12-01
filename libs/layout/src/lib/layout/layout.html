@@ -1,1 +1,25 @@
-<p>Layout works!</p>
+@if (authService.isAuthenticated()) {
+  <!-- Authenticated layout: Header + Sidebar + Main -->
+  <div class="layout-container">
+    <div class="layout-header sticky-top">
+      <ng-content select="[layout-header]" />
+    </div>
+
+    <div class="layout-body">
+      <div class="layout-sidebar">
+        <ng-content select="[layout-sidebar]" />
+      </div>
+
+      <main class="layout-main">
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+} @else {
+  <!-- Non-authenticated layout: Main only (full screen centered) -->
+  <div class="layout-container layout-container--unauthenticated">
+    <main class="layout-main layout-main--centered">
+      <router-outlet />
+    </main>
+  </div>
+}
