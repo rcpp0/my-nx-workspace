@@ -27,7 +27,10 @@
         "{workspaceRoot}/eslint.config.mjs"
       ]
     },
-    "@nx/vite:test": { "cache": true, "inputs": ["default", "^production"] }
+    "@nx/vite:test": {
+      "cache": true,
+      "inputs": ["default", "^production"]
+    }
   },
   "generators": {
     "@nx/angular:application": {
@@ -37,12 +40,13 @@
       "unitTestRunner": "vitest"
     },
     "@nx/angular:library": {
-      "style": "scss",
-      "unitTestRunner": "vitest"
+      "linter": "eslint",
+      "unitTestRunner": "vitest",
+      "style": "scss"
     },
     "@nx/angular:component": {
-      "changeDetection": "OnPush",
-      "style": "scss"
+      "style": "scss",
+      "changeDetection": "OnPush"
     }
   },
   "nxCloudId": "6929a3d6be3a378ff41b9bb0"

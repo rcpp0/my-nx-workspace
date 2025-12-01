@@ -14,7 +14,13 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@mini-crm/data-access": ["libs/data-access/src/index.ts"],
+      "@mini-crm/feature-auth": ["libs/feature-auth/src/index.ts"],
+      "@mini-crm/feature-orders": ["libs/feature-orders/src/index.ts"],
+      "@mini-crm/layout": ["libs/layout/src/index.ts"],
+      "@mini-crm/shared-ui": ["libs/shared-ui/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }
