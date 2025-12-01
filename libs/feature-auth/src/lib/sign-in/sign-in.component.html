@@ -1,0 +1,89 @@
+<div class="sign-in-container">
+  <div class="card">
+    <div class="card-body">
+      <h2 class="card-title text-center mb-4">Connexion</h2>
+
+      @if (error()) {
+        <div class="alert alert-danger" role="alert">
+          {{ error() }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <!-- Email Field -->
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            class="form-control"
+            [class.is-invalid]="getEmailError()"
+            formControlName="email"
+            placeholder="votre@email.com"
+            autocomplete="email"
+            [attr.aria-describedby]="getEmailError() ? 'email-error' : null"
+            [attr.aria-invalid]="getEmailError() ? 'true' : 'false'"
+          />
+          @if (getEmailError()) {
+            <div id="email-error" class="invalid-feedback">
+              {{ getEmailError() }}
+            </div>
+          }
+        </div>
+
+        <!-- Password Field -->
+        <div class="mb-3">
+          <label for="password" class="form-label">Mot de passe</label>
+          <input
+            type="password"
+            id="password"
+            class="form-control"
+            [class.is-invalid]="getPasswordError()"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            [attr.aria-describedby]="getPasswordError() ? 'password-error' : null"
+            [attr.aria-invalid]="getPasswordError() ? 'true' : 'false'"
+          />
+          @if (getPasswordError()) {
+            <div id="password-error" class="invalid-feedback">
+              {{ getPasswordError() }}
+            </div>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-grid gap-2">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="loading() || form.invalid"
+          >
+            @if (loading()) {
+              <span
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Connexion...
+            } @else {
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              Se connecter
+            }
+          </button>
+        </div>
+      </form>
+
+      <!-- Sign Up Link -->
+      <div class="text-center mt-3">
+        <p class="mb-0">
+          Pas encore de compte ?
+          <a routerLink="/auth/sign-up" class="text-decoration-none">
+            Créer un compte
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+

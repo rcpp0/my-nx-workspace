@@ -1,0 +1,110 @@
+<div class="sign-up-container">
+  <div class="card">
+    <div class="card-body">
+      <h2 class="card-title text-center mb-4">Inscription</h2>
+
+      @if (error()) {
+        <div class="alert alert-danger" role="alert">
+          {{ error() }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <!-- Email Field -->
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            class="form-control"
+            [class.is-invalid]="getEmailError()"
+            formControlName="email"
+            placeholder="votre@email.com"
+            autocomplete="email"
+            [attr.aria-describedby]="getEmailError() ? 'email-error' : null"
+            [attr.aria-invalid]="getEmailError() ? 'true' : 'false'"
+          />
+          @if (getEmailError()) {
+            <div id="email-error" class="invalid-feedback">
+              {{ getEmailError() }}
+            </div>
+          }
+        </div>
+
+        <!-- Password Field -->
+        <div class="mb-3">
+          <label for="password" class="form-label">Mot de passe</label>
+          <input
+            type="password"
+            id="password"
+            class="form-control"
+            [class.is-invalid]="getPasswordError()"
+            formControlName="password"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            [attr.aria-describedby]="getPasswordError() ? 'password-error' : null"
+            [attr.aria-invalid]="getPasswordError() ? 'true' : 'false'"
+          />
+          @if (getPasswordError()) {
+            <div id="password-error" class="invalid-feedback">
+              {{ getPasswordError() }}
+            </div>
+          }
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="mb-3">
+          <label for="confirmPassword" class="form-label">Confirmer le mot de passe</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            class="form-control"
+            [class.is-invalid]="getConfirmPasswordError()"
+            formControlName="confirmPassword"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            [attr.aria-describedby]="getConfirmPasswordError() ? 'confirm-password-error' : null"
+            [attr.aria-invalid]="getConfirmPasswordError() ? 'true' : 'false'"
+          />
+          @if (getConfirmPasswordError()) {
+            <div id="confirm-password-error" class="invalid-feedback">
+              {{ getConfirmPasswordError() }}
+            </div>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-grid gap-2">
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="loading() || form.invalid"
+          >
+            @if (loading()) {
+              <span
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Inscription...
+            } @else {
+              <i class="bi bi-person-plus me-2"></i>
+              Créer un compte
+            }
+          </button>
+        </div>
+      </form>
+
+      <!-- Sign In Link -->
+      <div class="text-center mt-3">
+        <p class="mb-0">
+          Déjà un compte ?
+          <a routerLink="/auth/sign-in" class="text-decoration-none">
+            Se connecter
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+

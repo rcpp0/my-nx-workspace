@@ -1,0 +1,44 @@
+// ============================================
+// 1. VARIABLES CSS CUSTOM DU COMPONENT
+// ============================================
+:host {
+  // Variables de layout
+  --sign-in-container-padding: 2rem;
+  --sign-in-container-max-width: 400px;
+  --sign-in-card-padding: 2rem;
+
+  // Host display
+  display: block;
+  width: 100%;
+}
+
+// ============================================
+// 2. STYLES DU COMPONENT
+// ============================================
+.sign-in-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--sign-in-container-padding);
+}
+
+.card {
+  width: 100%;
+  max-width: var(--sign-in-container-max-width);
+}
+
+.card-body {
+  padding: var(--sign-in-card-padding);
+}
+
+// ============================================
+// 3. RESPONSIVE
+// ============================================
+@media (max-width: 576px) {
+  :host {
+    --sign-in-container-padding: 1rem;
+    --sign-in-card-padding: 1.5rem;
+  }
+}
+

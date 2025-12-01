@@ -4,8 +4,9 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { API_CONFIG } from '@mini-crm/data-access';
+import { authInterceptor } from '@mini-crm/feature-auth';
 import { environment } from '../../environments/environment';
 import { appRoutes } from './app.routes';
 
@@ -14,7 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([authInterceptor])),
     {
       provide: API_CONFIG,
       useValue: { apiUrl: environment.apiUrl },
