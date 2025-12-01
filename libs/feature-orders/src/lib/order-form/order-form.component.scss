@@ -1,10 +1,28 @@
 // ============================================
 // 1. VARIABLES CSS CUSTOM DU COMPONENT
 // ============================================
+// IMPORTANT : Bootstrap est déjà chargé globalement dans project.json
+// Utiliser directement les variables CSS Bootstrap (var(--bs-primary), etc.)
 :host {
   // Variables de layout
-  --order-form-gap: 1rem;
-  --order-form-totals-padding: 1rem;
+  --order-form-gap: 1.5rem;
+  --order-form-gap-mobile: 1rem;
+  --order-form-totals-padding: 1.5rem;
+  --order-form-totals-padding-mobile: 1rem;
+  --order-form-actions-gap: 0.75rem;
+  --order-form-card-border-radius: var(--bs-border-radius);
+  --order-form-card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+
+  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
+  --order-form-card-bg: var(--bs-light);
+  --order-form-card-border: var(--bs-border-color);
+  --order-form-total-primary: var(--bs-primary);
+
+  // Variables de focus (accessibilité WCAG AA)
+  --order-form-input-focus-border: var(--bs-primary);
+  --order-form-input-focus-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+  --order-form-btn-focus-outline: 2px solid var(--bs-primary);
+  --order-form-btn-focus-outline-offset: 2px;
 
   // Host display
   display: block;
@@ -20,18 +38,82 @@ form {
   gap: var(--order-form-gap);
 }
 
+// Form control focus states améliorés
+.form-control:focus {
+  border-color: var(--order-form-input-focus-border);
+  box-shadow: var(--order-form-input-focus-shadow);
+}
+
+// Input group styling
+.input-group {
+  .input-group-text {
+    background-color: var(--bs-gray-100);
+    border-color: var(--bs-border-color);
+    color: var(--bs-body-color);
+    font-weight: 500;
+  }
+}
+
+// Card styling pour les totaux
 .card {
-  background-color: var(--bs-light);
-  border: 1px solid var(--bs-border-color);
+  background-color: var(--order-form-card-bg);
+  border: 1px solid var(--order-form-card-border);
+  border-radius: var(--order-form-card-border-radius);
+  box-shadow: var(--order-form-card-shadow);
 }
 
 .card-body {
   padding: var(--order-form-totals-padding);
 }
 
-// Button focus state amélioré (accessibilité WCAG AA)
+// Totals display styling
+.card-body .row {
+  margin-bottom: 0.5rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--bs-border-color);
+  }
+}
+
+// Form actions styling
+.d-flex.justify-content-end {
+  gap: var(--order-form-actions-gap);
+  margin-top: var(--order-form-gap);
+}
+
+// Button focus states améliorés (accessibilité WCAG AA)
 .btn:focus-visible {
-  outline: 2px solid var(--bs-primary);
-  outline-offset: 2px;
+  outline: var(--order-form-btn-focus-outline);
+  outline-offset: var(--order-form-btn-focus-outline-offset);
+  z-index: 1;
+}
+
+// Invalid feedback styling amélioré
+.invalid-feedback {
+  display: block;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+// ============================================
+// 3. RESPONSIVE
+// ============================================
+@media (max-width: 575.98px) {
+  :host {
+    --order-form-gap: var(--order-form-gap-mobile);
+    --order-form-totals-padding: var(--order-form-totals-padding-mobile);
+    --order-form-actions-gap: 0.5rem;
+  }
+
+  .d-flex.justify-content-end {
+    flex-direction: column-reverse;
+    width: 100%;
+    
+    .btn {
+      width: 100%;
+    }
+  }
 }
 

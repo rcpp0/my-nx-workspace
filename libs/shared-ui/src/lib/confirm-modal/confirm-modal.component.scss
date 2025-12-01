@@ -1,10 +1,21 @@
 // ============================================
 // 1. VARIABLES CSS CUSTOM DU COMPONENT
 // ============================================
+// IMPORTANT : Bootstrap est déjà chargé globalement dans project.json
+// Utiliser directement les variables CSS Bootstrap (var(--bs-primary), etc.)
 :host {
   // Variables de layout
   --modal-z-index: 1055; // Bootstrap default modal z-index
   --modal-backdrop-z-index: 1050; // Bootstrap default backdrop z-index
+  --modal-dialog-margin: 1.75rem auto;
+  --modal-dialog-margin-mobile: 0.5rem;
+
+  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
+  --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+
+  // Variables de focus (accessibilité WCAG AA)
+  --modal-btn-focus-outline: 2px solid var(--bs-primary);
+  --modal-btn-focus-outline-offset: 2px;
 
   // Host display
   display: block;
@@ -15,21 +26,17 @@
 // ============================================
 .modal-backdrop {
   z-index: var(--modal-backdrop-z-index);
+  background-color: var(--modal-backdrop-bg);
 }
 
 .modal {
   z-index: var(--modal-z-index);
-}
-
-// Ensure modal is properly displayed when visible
-.modal.show.modal-visible {
-  display: block !important;
-}
-
-// ============================================
-// 3. ACCESSIBILITY
-// ============================================
-.modal {
+  
+  // Ensure modal is properly displayed when visible
+  &.show.modal-visible {
+    display: block !important;
+  }
+  
   // Ensure focus trap works properly
   &:focus {
     outline: none;
@@ -37,7 +44,74 @@
 }
 
 .modal-dialog {
-  // Ensure modal is centered
-  margin: 1.75rem auto;
+  margin: var(--modal-dialog-margin);
+}
+
+.modal-content {
+  border-radius: var(--bs-border-radius-lg);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--bs-border-color);
+  
+  .modal-title {
+    font-weight: 600;
+    color: var(--bs-dark);
+  }
+  
+  .btn-close {
+    &:focus-visible {
+      outline: var(--modal-btn-focus-outline);
+      outline-offset: var(--modal-btn-focus-outline-offset);
+    }
+  }
+}
+
+.modal-body {
+  padding: 1.5rem;
+  color: var(--bs-body-color);
+  
+  p {
+    margin-bottom: 0;
+    line-height: 1.5;
+  }
+}
+
+.modal-footer {
+  border-top: 1px solid var(--bs-border-color);
+  gap: 0.5rem;
+  
+  .btn {
+    min-width: 80px;
+    
+    &:focus-visible {
+      outline: var(--modal-btn-focus-outline);
+      outline-offset: var(--modal-btn-focus-outline-offset);
+      z-index: 1;
+    }
+  }
+}
+
+// ============================================
+// 3. RESPONSIVE
+// ============================================
+@media (max-width: 575.98px) {
+  :host {
+    --modal-dialog-margin: var(--modal-dialog-margin-mobile);
+  }
+  
+  .modal-dialog {
+    margin: var(--modal-dialog-margin);
+    max-width: calc(100% - 1rem);
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse;
+    
+    .btn {
+      width: 100%;
+    }
+  }
 }
 

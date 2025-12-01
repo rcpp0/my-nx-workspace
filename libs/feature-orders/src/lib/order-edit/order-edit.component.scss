@@ -1,10 +1,18 @@
 // ============================================
 // 1. VARIABLES CSS CUSTOM DU COMPONENT
 // ============================================
+// IMPORTANT : Bootstrap est déjà chargé globalement dans project.json
+// Utiliser directement les variables CSS Bootstrap (var(--bs-primary), etc.)
 :host {
   // Variables de layout
   --order-edit-container-padding: 2rem;
+  --order-edit-container-padding-mobile: 1rem;
   --order-edit-container-max-width: 800px;
+  --order-edit-header-margin-bottom: 1.5rem;
+  --order-edit-alert-margin-bottom: 1.5rem;
+
+  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
+  --order-edit-bg: var(--bs-body-bg);
 
   // Host display
   display: block;
@@ -18,14 +26,51 @@
   padding: var(--order-edit-container-padding);
   max-width: var(--order-edit-container-max-width);
   margin: 0 auto;
+  background-color: var(--order-edit-bg);
+}
+
+h2 {
+  margin-bottom: var(--order-edit-header-margin-bottom);
+  color: var(--bs-dark);
+  font-weight: 600;
+}
+
+.alert {
+  margin-bottom: var(--order-edit-alert-margin-bottom);
+  border-radius: var(--bs-border-radius);
+  
+  i {
+    flex-shrink: 0;
+  }
+}
+
+// Spinner container styling
+.text-center {
+  padding: 3rem 1rem;
+  
+  p {
+    color: var(--bs-secondary);
+    margin-top: 1rem;
+  }
 }
 
 // ============================================
 // 3. RESPONSIVE
 // ============================================
-@media (max-width: 768px) {
+// Tablet (md breakpoint: 768px)
+@media (max-width: 991.98px) {
   :host {
-    --order-edit-container-padding: 1rem;
+    --order-edit-container-padding: 1.5rem;
+    --order-edit-container-max-width: 100%;
+  }
+}
+
+// Mobile (sm breakpoint: 576px)
+@media (max-width: 575.98px) {
+  :host {
+    --order-edit-container-padding: var(--order-edit-container-padding-mobile);
+    --order-edit-header-margin-bottom: 1rem;
+    --order-edit-alert-margin-bottom: 1rem;
   }
 }
 

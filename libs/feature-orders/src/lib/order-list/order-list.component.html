@@ -31,13 +31,13 @@
   <!-- Orders Table -->
   @if (!loading() || orders().length > 0) {
     @if (orders().length === 0) {
-      <div class="alert alert-info" role="alert">
+      <div class="alert alert-info d-flex align-items-center" role="alert">
         <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
-        Aucune commande pour le moment.
+        <span>Aucune commande pour le moment.</span>
       </div>
     } @else {
       <div class="table-responsive">
-        <table class="table table-striped table-hover">
+        <table class="table table-striped table-hover" role="table" aria-label="Liste des commandes">
           <thead>
             <tr>
               <th scope="col">ID</th>
@@ -53,14 +53,22 @@
           <tbody>
             @for (order of orders(); track order.id) {
               <tr>
-                <td>{{ order.id }}</td>
-                <td>{{ order.customer }}</td>
-                <td>{{ order.nbDays }}</td>
+                <td>
+                  <span class="badge bg-secondary">{{ order.id }}</span>
+                </td>
+                <td>
+                  <strong>{{ order.customer }}</strong>
+                </td>
+                <td>
+                  <span class="badge bg-info text-dark">{{ order.nbDays }} jour{{ order.nbDays > 1 ? 's' : '' }}</span>
+                </td>
                 <td>{{ formatCurrency(order.tjm) }}</td>
-                <td>{{ order.tauxTva }}%</td>
+                <td>
+                  <span class="badge bg-light text-dark">{{ order.tauxTva }}%</span>
+                </td>
                 <td class="text-end">{{ formatCurrency(order.totalHt) }}</td>
                 <td class="text-end">
-                  <strong class="text-primary">{{ formatCurrency(order.totalTtc) }}</strong>
+                  <strong class="text-primary fs-6">{{ formatCurrency(order.totalTtc) }}</strong>
                 </td>
                 <td class="text-center">
                   <div class="btn-group" role="group" [attr.aria-label]="'Actions pour la commande ' + order.id">
@@ -69,6 +77,7 @@
                       class="btn btn-sm btn-outline-primary"
                       (click)="onEditOrder(order)"
                       [attr.aria-label]="'Modifier la commande ' + order.id"
+                      title="Modifier"
                     >
                       <i class="bi bi-pencil" aria-hidden="true"></i>
                       <span class="visually-hidden">Modifier</span>
@@ -78,6 +87,7 @@
                       class="btn btn-sm btn-outline-danger"
                       (click)="onDeleteOrder(order)"
                       [attr.aria-label]="'Supprimer la commande ' + order.id"
+                      title="Supprimer"
                     >
                       <i class="bi bi-trash" aria-hidden="true"></i>
                       <span class="visually-hidden">Supprimer</span>

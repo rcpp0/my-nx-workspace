@@ -1,11 +1,24 @@
 // ============================================
 // 1. VARIABLES CSS CUSTOM DU COMPONENT
 // ============================================
+// IMPORTANT : Bootstrap est déjà chargé globalement dans project.json
+// Utiliser directement les variables CSS Bootstrap (var(--bs-primary), etc.)
 :host {
   // Variables de layout
   --order-list-container-padding: 2rem;
+  --order-list-container-padding-mobile: 1rem;
   --order-list-header-gap: 1rem;
-  --order-list-table-gap: 1rem;
+  --order-list-table-gap: 1.5rem;
+  --order-list-table-border-radius: var(--bs-border-radius);
+
+  // Variables de couleurs (utilisent les variables CSS Bootstrap globales)
+  --order-list-header-bg: transparent;
+  --order-list-table-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+
+  // Variables de focus (accessibilité WCAG AA)
+  --order-list-btn-focus-outline: 2px solid var(--bs-primary);
+  --order-list-btn-focus-outline-offset: 2px;
+  --order-list-btn-group-gap: 0.25rem;
 
   // Host display
   display: block;
@@ -19,46 +32,132 @@
   padding: var(--order-list-container-padding);
 }
 
-// Header styling
-.d-flex {
+// Header styling avec variables CSS
+.order-list-container > .d-flex {
   gap: var(--order-list-header-gap);
+  margin-bottom: var(--order-list-table-gap);
 }
 
-// Table styling
+// Table responsive container
 .table-responsive {
-  margin-top: var(--order-list-table-gap);
+  border-radius: var(--order-list-table-border-radius);
+  box-shadow: var(--order-list-table-shadow);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
+// Table styling amélioré
 .table {
   margin-bottom: 0;
+  
+  // Améliorer la lisibilité sur mobile
+  th {
+    white-space: nowrap;
+    font-weight: 600;
+    background-color: var(--bs-gray-100);
+    border-bottom: 2px solid var(--bs-border-color);
+  }
+
+  td {
+    vertical-align: middle;
+  }
+
+  // Hover effect amélioré
+  tbody tr {
+    transition: background-color 0.15s ease-in-out;
+    
+    &:hover {
+      background-color: var(--bs-gray-50);
+    }
+  }
 }
 
-// Button group styling
+// Button group styling avec gap
 .btn-group {
-  gap: 0.25rem;
+  gap: var(--order-list-btn-group-gap);
+  
+  .btn {
+    white-space: nowrap;
+  }
 }
 
-// Button focus state amélioré (accessibilité WCAG AA)
+// Button focus states améliorés (accessibilité WCAG AA)
 .btn:focus-visible {
-  outline: 2px solid var(--bs-primary);
-  outline-offset: 2px;
+  outline: var(--order-list-btn-focus-outline);
+  outline-offset: var(--order-list-btn-focus-outline-offset);
+  z-index: 1;
+}
+
+// Badge styling (pour uniformité)
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+}
+
+// Alert styling amélioré
+.alert {
+  border-radius: var(--order-list-table-border-radius);
+  margin-bottom: var(--order-list-table-gap);
+  
+  i {
+    flex-shrink: 0;
+  }
 }
 
 // ============================================
 // 3. RESPONSIVE
 // ============================================
-@media (max-width: 768px) {
+// Tablet (md breakpoint: 768px)
+@media (max-width: 991.98px) {
   :host {
-    --order-list-container-padding: 1rem;
+    --order-list-container-padding: 1.5rem;
+    --order-list-header-gap: 0.75rem;
   }
 
-  .d-flex {
+  .order-list-container > .d-flex {
     flex-direction: column;
     align-items: stretch !important;
+    
+    h2 {
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  .btn-group {
+    flex-direction: row;
+    width: 100%;
+    
+    .btn {
+      flex: 1;
+    }
+  }
+}
+
+// Mobile (sm breakpoint: 576px)
+@media (max-width: 575.98px) {
+  :host {
+    --order-list-container-padding: var(--order-list-container-padding-mobile);
+    --order-list-table-gap: 1rem;
+  }
+
+  // Masquer certaines colonnes sur mobile pour améliorer la lisibilité
+  .table {
+    th:nth-child(3),
+    td:nth-child(3),
+    th:nth-child(4),
+    td:nth-child(4),
+    th:nth-child(5),
+    td:nth-child(5) {
+      display: none;
+    }
   }
 
   .btn-group {
     flex-direction: column;
+    
+    .btn {
+      width: 100%;
+    }
   }
 }
 
