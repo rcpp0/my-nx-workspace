@@ -20,7 +20,12 @@
             "input": "apps/mini-crm/public"
           }
         ],
-        "styles": ["apps/mini-crm/src/styles.scss"]
+        "styles": [
+          "node_modules/bootstrap/dist/css/bootstrap.min.css",
+          "node_modules/bootstrap-icons/font/bootstrap-icons.css",
+          "apps/mini-crm/src/styles.scss"
+        ],
+        "scripts": ["node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"]
       },
       "configurations": {
         "production": {
@@ -36,7 +41,13 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/mini-crm/src/environments/environment.ts",
+              "with": "apps/mini-crm/src/environments/environment.prod.ts"
+            }
+          ]
         },
         "development": {
           "optimization": false,
