@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from '@mini-crm/feature-auth';
+import { authGuard } from '@mini-crm/data-access';
 
 export const appRoutes: Routes = [
   {

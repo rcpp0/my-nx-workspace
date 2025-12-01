@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '@mini-crm/data-access';
+import { AuthService } from '../services/auth.service';
 
 /**
  * Authentication guard to protect routes.

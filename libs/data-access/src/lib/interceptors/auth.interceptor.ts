@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { HttpInterceptorFn, HttpRequest } from '@angular/common/http';
-import { AuthService } from '@mini-crm/data-access';
+import { AuthService } from '../services/auth.service';
 
 /**
  * Authentication interceptor for HTTP requests.

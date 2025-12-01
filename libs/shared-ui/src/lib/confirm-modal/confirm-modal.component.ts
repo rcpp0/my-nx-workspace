@@ -212,8 +212,9 @@ export class ConfirmModalComponent {
    * Handles the ESC key press to close the modal
    * @internal
    */
-  protected onEscapeKey(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && this.visible()) {
+  protected onEscapeKey(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    if (keyboardEvent.key === 'Escape' && this.visible()) {
       this.onCancel();
     }
   }

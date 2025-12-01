@@ -1,0 +1,37 @@
+// ============================================
+// 1. VARIABLES CSS CUSTOM DU COMPONENT
+// ============================================
+:host {
+  // Variables de layout
+  --order-form-gap: 1rem;
+  --order-form-totals-padding: 1rem;
+
+  // Host display
+  display: block;
+  width: 100%;
+}
+
+// ============================================
+// 2. STYLES DU COMPONENT
+// ============================================
+form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--order-form-gap);
+}
+
+.card {
+  background-color: var(--bs-light);
+  border: 1px solid var(--bs-border-color);
+}
+
+.card-body {
+  padding: var(--order-form-totals-padding);
+}
+
+// Button focus state amélioré (accessibilité WCAG AA)
+.btn:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
+}
+

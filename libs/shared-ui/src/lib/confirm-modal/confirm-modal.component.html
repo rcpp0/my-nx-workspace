@@ -3,7 +3,6 @@
   <div
     class="modal-backdrop fade show"
     (click)="onBackdropClick($event)"
-    (keydown.escape)="onEscapeKey($event)"
     tabindex="-1"
     role="dialog"
     aria-modal="true"
@@ -18,6 +17,7 @@
     role="dialog"
     aria-modal="true"
     [attr.aria-labelledby]="'confirm-modal-title'"
+    (keydown.escape)="onEscapeKey($event)"
   >
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">

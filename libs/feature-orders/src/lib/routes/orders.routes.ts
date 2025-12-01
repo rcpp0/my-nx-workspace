@@ -19,9 +19,24 @@ import { Routes } from '@angular/router';
 export const ORDERS_ROUTES: Routes = [
   {
     path: '',
-    redirectTo: 'list',
-    pathMatch: 'full',
+    loadComponent: () =>
+      import('../order-list/order-list.component').then(
+        (m) => m.OrderListComponent
+      ),
   },
-  // TODO: Add order routes when OrderListComponent is implemented
+  {
+    path: 'add',
+    loadComponent: () =>
+      import('../order-add/order-add.component').then(
+        (m) => m.OrderAddComponent
+      ),
+  },
+  {
+    path: 'edit/:id',
+    loadComponent: () =>
+      import('../order-edit/order-edit.component').then(
+        (m) => m.OrderEditComponent
+      ),
+  },
 ];
 

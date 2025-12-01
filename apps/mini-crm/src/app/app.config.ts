@@ -5,8 +5,7 @@ import {
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { API_CONFIG } from '@mini-crm/data-access';
-import { authInterceptor } from '@mini-crm/feature-auth';
+import { API_CONFIG, authInterceptor } from '@mini-crm/data-access';
 import { environment } from '../../environments/environment';
 import { appRoutes } from './app.routes';
 

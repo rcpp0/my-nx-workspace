@@ -1,0 +1,116 @@
+<div class="order-list-container">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Liste des commandes</h2>
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="onAddOrder()"
+      aria-label="Ajouter une nouvelle commande"
+    >
+      <i class="bi bi-plus-lg me-2" aria-hidden="true"></i>
+      Ajouter une commande
+    </button>
+  </div>
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Loading Spinner -->
+  @if (loading() && orders().length === 0) {
+    <div class="text-center py-5">
+      <lib-spinner [size]="'lg'" [variant]="'primary'" />
+    </div>
+  }
+
+  <!-- Orders Table -->
+  @if (!loading() || orders().length > 0) {
+    @if (orders().length === 0) {
+      <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+        Aucune commande pour le moment.
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Client</th>
+              <th scope="col">Jours</th>
+              <th scope="col">TJM</th>
+              <th scope="col">TVA</th>
+              <th scope="col" class="text-end">Total HT</th>
+              <th scope="col" class="text-end">Total TTC</th>
+              <th scope="col" class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (order of orders(); track order.id) {
+              <tr>
+                <td>{{ order.id }}</td>
+                <td>{{ order.customer }}</td>
+                <td>{{ order.nbDays }}</td>
+                <td>{{ formatCurrency(order.tjm) }}</td>
+                <td>{{ order.tauxTva }}%</td>
+                <td class="text-end">{{ formatCurrency(order.totalHt) }}</td>
+                <td class="text-end">
+                  <strong class="text-primary">{{ formatCurrency(order.totalTtc) }}</strong>
+                </td>
+                <td class="text-center">
+                  <div class="btn-group" role="group" [attr.aria-label]="'Actions pour la commande ' + order.id">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      (click)="onEditOrder(order)"
+                      [attr.aria-label]="'Modifier la commande ' + order.id"
+                    >
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                      <span class="visually-hidden">Modifier</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      (click)="onDeleteOrder(order)"
+                      [attr.aria-label]="'Supprimer la commande ' + order.id"
+                    >
+                      <i class="bi bi-trash" aria-hidden="true"></i>
+                      <span class="visually-hidden">Supprimer</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  <!-- Delete Confirmation Modal -->
+  <lib-confirm-modal
+    [isOpen]="isDeleteModalOpen()"
+    title="Supprimer la commande"
+    [message]="
+      orderToDelete()
+        ? 'Êtes-vous sûr de vouloir supprimer la commande ' +
+          orderToDelete()!.id +
+          ' (' +
+          orderToDelete()!.customer +
+          ') ?'
+        : ''
+    "
+    confirmLabel="Supprimer"
+    cancelLabel="Annuler"
+    confirmVariant="danger"
+    [autoClose]="true"
+    (confirmed)="onConfirmDelete()"
+    (cancelled)="onCancelDelete()"
+  />
+</div>
+

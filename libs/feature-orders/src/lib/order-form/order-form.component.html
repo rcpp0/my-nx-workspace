@@ -1,0 +1,137 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" aria-label="Formulaire de commande">
+  <!-- Customer Field -->
+  <div class="mb-3">
+    <label for="customer" class="form-label">Client</label>
+    <input
+      type="text"
+      id="customer"
+      class="form-control"
+      [class.is-invalid]="getCustomerError()"
+      formControlName="customer"
+      placeholder="Nom du client"
+      [attr.aria-describedby]="getCustomerError() ? 'customer-error' : null"
+      [attr.aria-invalid]="getCustomerError() ? 'true' : 'false'"
+      [attr.aria-required]="true"
+    />
+    @if (getCustomerError()) {
+      <div id="customer-error" class="invalid-feedback" role="alert">
+        {{ getCustomerError() }}
+      </div>
+    }
+  </div>
+
+  <!-- Number of Days Field -->
+  <div class="mb-3">
+    <label for="nbDays" class="form-label">Nombre de jours</label>
+    <input
+      type="number"
+      id="nbDays"
+      class="form-control"
+      [class.is-invalid]="getNbDaysError()"
+      formControlName="nbDays"
+      min="1"
+      [attr.aria-describedby]="getNbDaysError() ? 'nbDays-error' : null"
+      [attr.aria-invalid]="getNbDaysError() ? 'true' : 'false'"
+      [attr.aria-required]="true"
+    />
+    @if (getNbDaysError()) {
+      <div id="nbDays-error" class="invalid-feedback" role="alert">
+        {{ getNbDaysError() }}
+      </div>
+    }
+  </div>
+
+  <!-- TJM Field -->
+  <div class="mb-3">
+    <label for="tjm" class="form-label">TJM (Taux Journalier Moyen)</label>
+    <div class="input-group">
+      <input
+        type="number"
+        id="tjm"
+        class="form-control"
+        [class.is-invalid]="getTjmError()"
+        formControlName="tjm"
+        min="0"
+        step="0.01"
+        [attr.aria-describedby]="getTjmError() ? 'tjm-error' : null"
+        [attr.aria-invalid]="getTjmError() ? 'true' : 'false'"
+        [attr.aria-required]="true"
+      />
+      <span class="input-group-text">€</span>
+    </div>
+    @if (getTjmError()) {
+      <div id="tjm-error" class="invalid-feedback" role="alert">
+        {{ getTjmError() }}
+      </div>
+    }
+  </div>
+
+  <!-- TVA Rate Field -->
+  <div class="mb-3">
+    <label for="tauxTva" class="form-label">Taux de TVA</label>
+    <div class="input-group">
+      <input
+        type="number"
+        id="tauxTva"
+        class="form-control"
+        [class.is-invalid]="getTauxTvaError()"
+        formControlName="tauxTva"
+        min="0"
+        max="100"
+        step="0.1"
+        [attr.aria-describedby]="getTauxTvaError() ? 'tauxTva-error' : null"
+        [attr.aria-invalid]="getTauxTvaError() ? 'true' : 'false'"
+        [attr.aria-required]="true"
+      />
+      <span class="input-group-text">%</span>
+    </div>
+    @if (getTauxTvaError()) {
+      <div id="tauxTva-error" class="invalid-feedback" role="alert">
+        {{ getTauxTvaError() }}
+      </div>
+    }
+  </div>
+
+  <!-- Totals Display -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <strong>Total HT :</strong>
+        </div>
+        <div class="col-md-6 text-end">
+          <strong>{{ totalHt() | number: '1.2-2' }} €</strong>
+        </div>
+      </div>
+      <div class="row mt-2">
+        <div class="col-md-6">
+          <strong>Total TTC :</strong>
+        </div>
+        <div class="col-md-6 text-end">
+          <strong class="text-primary">{{ totalTtc() | number: '1.2-2' }} €</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Actions -->
+  <div class="d-flex gap-2 justify-content-end">
+    <button
+      type="button"
+      class="btn btn-secondary"
+      (click)="onCancel()"
+    >
+      <i class="bi bi-x-lg me-2" aria-hidden="true"></i>
+      Annuler
+    </button>
+    <button
+      type="submit"
+      class="btn btn-primary"
+      [disabled]="form.invalid"
+    >
+      <i class="bi bi-check-lg me-2" aria-hidden="true"></i>
+      {{ order() ? 'Modifier' : 'Créer' }}
+    </button>
+  </div>
+</form>
+

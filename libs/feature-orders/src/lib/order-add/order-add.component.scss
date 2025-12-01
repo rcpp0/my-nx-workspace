@@ -1,0 +1,31 @@
+// ============================================
+// 1. VARIABLES CSS CUSTOM DU COMPONENT
+// ============================================
+:host {
+  // Variables de layout
+  --order-add-container-padding: 2rem;
+  --order-add-container-max-width: 800px;
+
+  // Host display
+  display: block;
+  width: 100%;
+}
+
+// ============================================
+// 2. STYLES DU COMPONENT
+// ============================================
+.order-add-container {
+  padding: var(--order-add-container-padding);
+  max-width: var(--order-add-container-max-width);
+  margin: 0 auto;
+}
+
+// ============================================
+// 3. RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  :host {
+    --order-add-container-padding: 1rem;
+  }
+}
+
